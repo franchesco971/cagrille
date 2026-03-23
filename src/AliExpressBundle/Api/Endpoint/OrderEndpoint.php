@@ -30,7 +30,7 @@ class OrderEndpoint implements OrderEndpointInterface
         $data = $this->client->call('aliexpress.ds.order.create', [
             'product_items' => json_encode([[
                 'product_id'   => $request->productId,
-                'product_count'=> $request->quantity,
+                'product_count' => $request->quantity,
                 'sku_attr'     => $request->skuAttr,
             ]]),
             'logistics_service_name' => $request->logisticsService,

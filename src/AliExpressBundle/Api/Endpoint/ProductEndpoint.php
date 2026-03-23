@@ -61,7 +61,7 @@ class ProductEndpoint implements ProductEndpointInterface
         $items = $data['aliexpress_affiliate_product_query_response']['resp_result']['result']['products']['product'] ?? [];
 
         return array_map(
-            static fn(array $item) => ProductDto::fromApiResponse($item),
+            static fn (array $item) => ProductDto::fromApiResponse($item),
             $items,
         );
     }
