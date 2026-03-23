@@ -42,6 +42,9 @@
 
                 {# Compte #}
                 {% if app.user %}
+                    <span {{ sylius_test_html_attribute('full-name') }} class="text-ash-300 text-sm">
+                        {{ 'sylius.ui.hello'|trans }} {{ app.user.customer.firstName }}!
+                    </span>
                     <a href="{{ path('sylius_shop_account_dashboard') }}"
                        class="text-ash-300 hover:text-ember-400 transition-colors"
                        title="Mon compte">
