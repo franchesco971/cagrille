@@ -1,0 +1,58 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+
+    # Client HTTP principal
+    Cagrille\AlibabaBundle\Api\AlibabaApiClient:
+        arguments:
+            $appKey:      '%alibaba.app_key%'
+            $appSecret:   '%alibaba.app_secret%'
+            $accessToken: '%alibaba.access_token%'
+            $baseUrl:     '%alibaba.base_url%'
+            $timeout:     '%alibaba.timeout%'
+
+    # Liaison interface → implémentation (DIP)
+    Cagrille\AlibabaBundle\Contract\AlibabaApiClientInterface:
+        alias: Cagrille\AlibabaBundle\Api\AlibabaApiClient
+
+    # Endpoints
+    Cagrille\AlibabaBundle\Api\Endpoint\ProductEndpoint: ~
+    Cagrille\AlibabaBundle\Api\Endpoint\OrderEndpoint: ~
+    Cagrille\AlibabaBundle\Api\Endpoint\LogisticsEndpoint: ~
+
+    Cagrille\AlibabaBundle\Contract\ProductEndpointInterface:
+        alias: Cagrille\AlibabaBundle\Api\Endpoint\ProductEndpoint
+
+    Cagrille\AlibabaBundle\Contract\OrderEndpointInterface:
+        alias: Cagrille\AlibabaBundle\Api\Endpoint\OrderEndpoint
+
+    Cagrille\AlibabaBundle\Contract\LogisticsEndpointInterface:
+        alias: Cagrille\AlibabaBundle\Api\Endpoint\LogisticsEndpoint
+
+    # Services métier
+    Cagrille\AlibabaBundle\Service\NullProductPersistence: ~
+
+    # Implémentation par défaut (Null Object) — remplacée par SyliusProductPersistence
+    # une fois Sylius configuré (décommenter dans config/services.yaml)
+    Cagrille\AlibabaBundle\Contract\ProductPersistenceInterface:
+        alias: Cagrille\AlibabaBundle\Service\NullProductPersistence
+
+    Cagrille\AlibabaBundle\Service\ProductSyncService:
+        arguments:
+            $categories: '%alibaba.sync.categories%'
+            $batchSize:  '%alibaba.sync.batch_size%'
+
+    Cagrille\AlibabaBundle\Contract\ProductSyncServiceInterface:
+        alias: Cagrille\AlibabaBundle\Service\ProductSyncService
+
+    Cagrille\AlibabaBundle\Service\OrderService: ~
+    Cagrille\AlibabaBundle\Service\TrackingService: ~
+
+    # Commandes console (auto-configurées via AsCommand)
+    Cagrille\AlibabaBundle\Command\SyncProductsCommand:
+        tags: ['console.command']
+
+    Cagrille\AlibabaBundle\Command\TrackOrderCommand:
+        tags: ['console.command']

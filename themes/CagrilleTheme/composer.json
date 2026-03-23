@@ -1,0 +1,16 @@
+{
+    "name": "cagrille/cagrille-theme",
+    "type": "sylius-theme",
+    "description": "Thème e-commerce sur l'univers du barbecue et du feu",
+    "extra": {
+        "sylius-theme": {
+            "title": "Cagrille BBQ Theme"
+        }
+    },
+    "authors": [
+        {
+            "name": "Équipe Cagrille",
+            "homepage": "https://cagrille.fr"
+        }
+    ]
+}

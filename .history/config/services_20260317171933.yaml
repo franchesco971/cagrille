@@ -1,0 +1,129 @@
+# yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
+
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+# See also https://symfony.com/doc/current/service_container/import.html
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
+parameters:
+
+services:
+    # Default configuration for services in *this* file
+    _defaults:
+        # Automatically injects dependencies in your services
+        autowire: true
+
+        # Automatically registers your services as commands, event subscribers, etc.
+        autoconfigure: true
+
+        # Allows optimizing the container by removing unused services; this also means
+        # fetching services directly from the container via $container->get() won't work
+        public: false
+
+    _instanceof:
+        Sylius\Bundle\ResourceBundle\Controller\ResourceController:
+            autowire: false
+        Sylius\Bundle\ResourceBundle\Form\Type\AbstractResourceType:
+            autowire: false
+
+    # Makes classes in src/ available to be used as services;
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+            - '../src/AlibabaBundle/'
+
+    Cagrille\AlibabaBundle\:
+        resource: '../src/AlibabaBundle/'
+        exclude:
+            - '../src/AlibabaBundle/Resources/'
+
+    Cagrille\AliExpressBundle\:
+        resource: '../src/AliExpressBundle/'
+        exclude:
+            - '../src/AliExpressBundle/Resources/'
+            - '../src/AliExpressBundle/DependencyInjection/'
+
+    Cagrille\AlibabaBundle\Api\AlibabaApiClient:
+        arguments:
+            $appKey:     '%env(ALIBABA_APP_KEY)%'
+            $appSecret:  '%env(ALIBABA_APP_SECRET)%'
+            $accessToken: '%env(ALIBABA_ACCESS_TOKEN)%'
+            $baseUrl:    '%env(string:ALIBABA_BASE_URL)%'
+            $timeout:    '%env(int:ALIBABA_TIMEOUT)%'
+
+    Cagrille\AlibabaBundle\Command\GetTokenCommand:
+        arguments:
+            $appKey:      '%env(ALIBABA_APP_KEY)%'
+            $appSecret:   '%env(ALIBABA_APP_SECRET)%'
+            $baseUrl:     '%env(string:ALIBABA_BASE_URL)%'
+            $redirectUri: '%env(ALIBABA_REDIRECT_URI)%'
+        tags: ['console.command']
+    Cagrille\AlibabaBundle\Service\ProductSyncService:
+        arguments:
+            $categories: '%env(json:ALIBABA_SYNC_CATEGORIES)%'
+            $batchSize:  '%env(int:ALIBABA_SYNC_BATCH_SIZE)%'
+
+    # Persistence réelle Alibaba → Sylius (remplace NullProductPersistence)
+    Cagrille\AlibabaBundle\Service\SyliusProductPersistence:
+        arguments:
+            $productFactory:      '@sylius.factory.product'
+            $channelPricingFactory: '@sylius.factory.channel_pricing'
+            $channelRepository:   '@sylius.repository.channel'
+
+    Cagrille\AlibabaBundle\Contract\ProductPersistenceInterface:
+        alias: Cagrille\AlibabaBundle\Service\SyliusProductPersistence
+
+    # ── AliExpress Dropshipping ──────────────────────────────────────────────
+    Cagrille\AliExpressBundle\Api\AliExpressApiClient:
+        arguments:
+            $appKey:         '%env(ALIEXPRESS_APP_KEY)%'
+            $appSecret:      '%env(ALIEXPRESS_APP_SECRET)%'
+            $accessToken:    '%env(ALIEXPRESS_ACCESS_TOKEN)%'
+            $baseUrl:        '%env(string:ALIEXPRESS_BASE_URL)%'
+            $timeout:        '%env(int:ALIEXPRESS_TIMEOUT)%'
+            $targetCurrency: '%env(string:ALIEXPRESS_TARGET_CURRENCY)%'
+            $targetLanguage: '%env(string:ALIEXPRESS_TARGET_LANGUAGE)%'
+
+    Cagrille\AliExpressBundle\Contract\AliExpressApiClientInterface:
+        alias: Cagrille\AliExpressBundle\Api\AliExpressApiClient
+
+    Cagrille\AliExpressBundle\Api\Endpoint\ProductEndpoint:
+        arguments:
+            $client: '@Cagrille\AliExpressBundle\Api\AliExpressApiClient'
+
+    Cagrille\AliExpressBundle\Contract\ProductEndpointInterface:
+        alias: Cagrille\AliExpressBundle\Api\Endpoint\ProductEndpoint
+
+    Cagrille\AliExpressBundle\Contract\OrderEndpointInterface:
+        alias: Cagrille\AliExpressBundle\Api\Endpoint\OrderEndpoint
+
+    Cagrille\AliExpressBundle\Contract\LogisticsEndpointInterface:
+        alias: Cagrille\AliExpressBundle\Api\Endpoint\LogisticsEndpoint
+
+    Cagrille\AliExpressBundle\Service\ProductSyncService:
+        arguments:
+            $keywords:  '%env(json:ALIEXPRESS_SYNC_KEYWORDS)%'
+            $batchSize: '%env(int:ALIEXPRESS_SYNC_BATCH_SIZE)%'
+
+    Cagrille\AliExpressBundle\Contract\ProductSyncServiceInterface:
+        alias: Cagrille\AliExpressBundle\Service\ProductSyncService
+
+    # Persistance AliExpress → Sylius (remplace NullProductPersistence)
+    Cagrille\AliExpressBundle\Service\SyliusProductPersistence:
+        arguments:
+            $productFactory:       '@sylius.factory.product'
+            $channelPricingFactory: '@sylius.factory.channel_pricing'
+            $channelRepository:    '@sylius.repository.channel'
+
+    Cagrille\AliExpressBundle\Contract\ProductPersistenceInterface:
+        alias: Cagrille\AliExpressBundle\Service\SyliusProductPersistence
+
+    # Controllers are imported separately to make sure services can be injected
+    # as action arguments even if you don't extend any base controller class
+    App\Controller\:
+        resource: '../src/Controller'
+        tags: ['controller.service_arguments']

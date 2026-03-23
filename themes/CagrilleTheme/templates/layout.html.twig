@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Cagrille — L'univers du Barbecue{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Cagrille, votre spécialiste barbecue : grills, accessoires, charbons et tout pour les passionnés de cuisson au feu.{% endblock %}">
+
+    {# Tailwind CSS compilé #}
+    <link rel="stylesheet" href="{{ asset('build/app.css') }}">
+
+    {# Icône unicode feu comme favicon inline #}
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>">
+
+    {% block stylesheets %}{% endblock %}
+</head>
+<body class="bg-coal-800 text-ash-100 min-h-screen flex flex-col">
+
+    {# ── Navigation ──────────────────────────────────────────────────── #}
+    {% include '@CagrilleTheme/partial/_navbar.html.twig' %}
+
+    {# ── Contenu principal ───────────────────────────────────────────── #}
+    <main class="flex-1">
+        {% block content %}{% endblock %}
+    </main>
+
+    {# ── Pied de page ────────────────────────────────────────────────── #}
+    {% include '@CagrilleTheme/partial/_footer.html.twig' %}
+
+    {# AlpineJS pour composants interactifs légers #}
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    {% block javascripts %}{% endblock %}
+</body>
+</html>

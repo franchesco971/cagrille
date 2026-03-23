@@ -1,0 +1,105 @@
+{% set homepage_hook = 'sylius_shop.homepage.index' %}
+{% set prefixes = [homepage_hook] %}
+
+{% extends '@SyliusShop/shared/layout/base.html.twig' %}
+
+{% block title %}Cagrille — L'univers du Barbecue{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+{% endblock %}
+
+{% block content %}
+
+{# ── Hero Section ──────────────────────────────────────────────────────────── #}
+<section class="hero-section">
+    {# Particules feu (CSS uniquement) #}
+    <div class="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        <div class="absolute bottom-0 left-1/4 w-1 h-32 bg-gradient-to-t from-ember-600 to-transparent animate-flicker opacity-60 rounded-full blur-sm"></div>
+        <div class="absolute bottom-0 left-1/3 w-1.5 h-48 bg-gradient-to-t from-flame-500 to-transparent animate-flicker opacity-40 rounded-full blur-sm" style="animation-delay:.4s"></div>
+        <div class="absolute bottom-0 left-1/2 w-1 h-40 bg-gradient-to-t from-ember-400 to-transparent animate-flicker opacity-50 rounded-full blur-sm" style="animation-delay:.8s"></div>
+        <div class="absolute bottom-0 right-1/3 w-2 h-56 bg-gradient-to-t from-gold-400 to-transparent animate-flicker opacity-30 rounded-full blur-md" style="animation-delay:.2s"></div>
+    </div>
+
+    <div class="relative z-10 max-w-4xl mx-auto px-4 text-center py-24 space-y-8">
+        <p class="text-ember-400 font-semibold tracking-widest uppercase text-sm">
+            🔥 L'art de la cuisson au feu
+        </p>
+        <h1 class="font-display text-6xl md:text-8xl text-fire-gradient leading-none">
+            ALLUMEZ LA FLAMME
+        </h1>
+        <p class="text-ash-300 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
+            Barbecues premium, accessoires pro et charbons de qualité —
+            sélectionnés chez les meilleurs fournisseurs mondiaux.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="{{ path('sylius_shop_product_index', {'slug': 'category'}) }}" class="btn-fire text-lg px-8 py-4">
+                🛒 Découvrir les produits
+            </a>
+        </div>
+    </div>
+
+    {# Indicateur de scroll #}
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce z-10">
+        <svg class="w-6 h-6 text-ember-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+    </div>
+</section>
+
+{# ── Produits vedettes ─────────────────────────────────────────────────────── #}
+{{ render(controller('App\\Controller\\HomepageController::featuredProducts')) }}
+
+{# ── Catégories ────────────────────────────────────────────────────────────── #}
+<section class="py-16 bg-coal-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <h2 class="font-display text-4xl text-fire-gradient mb-3">NOS UNIVERS</h2>
+            <div class="fire-divider max-w-xs mx-auto"></div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {% set categories = [
+                { label: 'Barbecues',   icon: '🍖', slug: 'barbecues',   desc: 'Charbon, gaz, électrique' },
+                { label: 'Grills',      icon: '🥩', slug: 'grills',      desc: 'Plancha et grilles' },
+                { label: 'Accessoires', icon: '🔧', slug: 'accessoires', desc: 'Spatules, pinces, gants' },
+                { label: 'Charbons',    icon: '⚫', slug: 'charbons',    desc: 'Charbon et briquettes' },
+            ] %}
+
+            {% for cat in categories %}
+            <a href="{{ path('sylius_shop_product_index', {'slug': cat.slug}) }}"
+               class="group flex flex-col items-center p-6 rounded-2xl
+                      bg-coal-700 border border-coal-600
+                      hover:border-ember-500 hover:bg-coal-600
+                      shadow-coal hover:shadow-fire
+                      transition-all duration-300 hover:-translate-y-1 text-center">
+                <span class="text-5xl mb-4 group-hover:scale-110 transition-transform duration-200">{{ cat.icon }}</span>
+                <span class="font-display text-xl text-ash-100 tracking-wide">{{ cat.label }}</span>
+                <span class="text-sm text-ash-400 mt-1">{{ cat.desc }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{# ── Bande de confiance ────────────────────────────────────────────────────── #}
+<section class="py-12 bg-fire-gradient">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            {% for item in [
+                { icon: '🚀', title: 'Livraison rapide',  desc: 'Expédition sous 48h' },
+                { icon: '🛡️', title: 'Qualité garantie', desc: 'Produits certifiés' },
+                { icon: '🔄', title: 'Retours faciles',   desc: '30 jours pour changer' },
+                { icon: '💬', title: 'Support 7j/7',      desc: 'On répond toujours' },
+            ] %}
+            <div class="space-y-2">
+                <div class="text-4xl">{{ item.icon }}</div>
+                <div class="font-display text-lg text-coal-900">{{ item.title }}</div>
+                <div class="text-sm text-coal-700">{{ item.desc }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{% endblock %}

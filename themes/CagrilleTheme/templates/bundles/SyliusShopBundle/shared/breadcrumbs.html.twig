@@ -1,0 +1,17 @@
+{% macro breadcrumbs(items) %}
+    <ol class="flex flex-wrap items-center gap-x-2 text-sm text-ash-400" aria-label="breadcrumbs">
+        {% for item in items %}
+            <li class="flex items-center gap-x-2">
+                {% if not loop.first %}
+                    <span class="text-ash-600" aria-hidden="true">/</span>
+                {% endif %}
+                {% if item.path is defined %}
+                    <a href="{{ item.path }}"
+                       class="hover:text-ember-400 transition-colors duration-150">{{ item.label|raw }}</a>
+                {% else %}
+                    <span class="text-ash-200 font-medium">{{ item.label|raw }}</span>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ol>
+{% endmacro %}

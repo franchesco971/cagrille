@@ -1,0 +1,44 @@
+<article class="product-card">
+    {# Badge promo/nouveau #}
+    {% if product.createdAt and product.createdAt > date('-7 days') %}
+        <span class="product-card__badge">Nouveau</span>
+    {% endif %}
+
+    {# Image #}
+    <a href="{{ path('sylius_shop_product_show', {'slug': product.slug}) }}"
+       class="block overflow-hidden bg-coal-600">
+        {% if product.images|length > 0 %}
+            <img src="{{ product.images|first.path|imagine_filter('sylius_shop_product_large_thumbnail') }}"
+                 alt="{{ product.name|e('html_attr') }}"
+                 class="product-card__image transition-transform duration-500 group-hover:scale-105"
+                 loading="lazy">
+        {% else %}
+            <div class="product-card__image flex items-center justify-center text-6xl bg-coal-600">
+                🔥
+            </div>
+        {% endif %}
+    </a>
+
+    {# Contenu #}
+    <div class="product-card__body">
+        <a href="{{ path('sylius_shop_product_show', {'slug': product.slug}) }}">
+            <h3 class="product-card__title hover:text-ember-400 transition-colors duration-200">
+                {{ product.name }}
+            </h3>
+        </a>
+
+        <div class="flex items-center gap-3">
+            {% set variant = product.variants|first %}
+            {% if variant is not null %}
+                <span class="product-card__price">
+                    {{ variant.channelPricings|first.price / 100 | number_format(2, ',', ' ') }} €
+                </span>
+            {% endif %}
+        </div>
+
+        <a href="{{ path('sylius_shop_product_show', {'slug': product.slug}) }}"
+           class="btn-fire w-full justify-center mt-2 text-sm py-2">
+            Voir le produit
+        </a>
+    </div>
+</article>
