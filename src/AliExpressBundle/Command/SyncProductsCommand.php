@@ -44,7 +44,9 @@ class SyncProductsCommand extends Command
         $io      = new SymfonyStyle($input, $output);
         $io->title('Synchronisation AliExpress → Sylius');
 
+        /** @var string|null $itemId */
         $itemId  = $input->getOption('item');
+        /** @var string|null $keyword */
         $keyword = $input->getOption('keyword');
 
         try {

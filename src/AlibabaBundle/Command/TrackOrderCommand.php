@@ -41,9 +41,12 @@ class TrackOrderCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io      = new SymfonyStyle($input, $output);
-        $orderId = $input->getArgument('order_id');
-        $tracking = $input->getOption('tracking');
-        $carrier  = $input->getOption('carrier');
+        $rawOrderId  = $input->getArgument('order_id');
+        $orderId = is_string($rawOrderId) ? $rawOrderId : null;
+        $rawTracking = $input->getOption('tracking');
+        $rawCarrier  = $input->getOption('carrier');
+        $tracking = is_string($rawTracking) ? $rawTracking : null;
+        $carrier  = is_string($rawCarrier)  ? $rawCarrier  : null;
 
         try {
             if ($tracking !== null && $carrier !== null) {

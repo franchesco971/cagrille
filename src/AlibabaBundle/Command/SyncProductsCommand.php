@@ -40,7 +40,9 @@ class SyncProductsCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $io->title('Synchronisation Alibaba → Sylius');
 
+        /** @var string|null $productId */
         $productId  = $input->getOption('product');
+        /** @var string|null $categoryId */
         $categoryId = $input->getOption('category');
 
         try {

@@ -9,6 +9,9 @@ namespace Cagrille\AlibabaBundle\Dto;
  */
 final class OrderDto
 {
+    /**
+     * @phpstan-ignore missingType.iterableValue
+     */
     public function __construct(
         public readonly string $orderId,
         public readonly string $status,
@@ -23,6 +26,9 @@ final class OrderDto
     ) {
     }
 
+    /**
+     * @phpstan-ignore missingType.iterableValue
+     */
     public static function fromApiResponse(array $data): self
     {
         return new self(

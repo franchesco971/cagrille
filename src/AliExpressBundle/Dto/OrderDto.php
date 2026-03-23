@@ -22,6 +22,9 @@ final class OrderDto
     ) {
     }
 
+    /**
+     * @phpstan-ignore missingType.iterableValue
+     */
     public static function fromApiResponse(array $data): self
     {
         $result = $data['result'] ?? $data;

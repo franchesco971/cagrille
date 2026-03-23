@@ -49,6 +49,7 @@ class AliExpressApiClient implements AliExpressApiClientInterface
      * Envoie une requête POST signée à l'API AliExpress DS.
      *
      * {@inheritdoc}
+     * @phpstan-ignore missingType.iterableValue
      */
     public function call(string $method, array $params = []): array
     {
@@ -89,6 +90,8 @@ class AliExpressApiClient implements AliExpressApiClientInterface
     /**
      * Retourne les paramètres d'enrichissement communs à toutes les requêtes produit.
      * Exposé pour les endpoints qui en ont besoin.
+     *
+     * @phpstan-ignore missingType.iterableValue
      */
     public function getProductQueryDefaults(): array
     {
@@ -102,6 +105,8 @@ class AliExpressApiClient implements AliExpressApiClientInterface
     /**
      * Génère la signature HMAC-SHA256 selon le protocole AliExpress Open Platform.
      * Format : HMAC-SHA256(key=appSecret, message=sorted_key+value_pairs)
+     *
+     * @phpstan-ignore missingType.iterableValue
      */
     private function generateSignature(array $params): string
     {
@@ -109,7 +114,7 @@ class AliExpressApiClient implements AliExpressApiClientInterface
 
         $signStr = '';
         foreach ($params as $key => $value) {
-            if ($key !== 'sign' && $value !== '' && $value !== null) {
+            if ($key !== 'sign' && is_string($value) && $value !== '') {
                 $signStr .= $key . $value;
             }
         }
@@ -120,6 +125,7 @@ class AliExpressApiClient implements AliExpressApiClientInterface
     /**
      * Décode la réponse JSON et lève une exception si l'API retourne une erreur.
      *
+     * @return array<string, mixed>
      * @throws AliExpressApiException
      */
     private function decodeResponse(string $body, string $method): array
@@ -132,13 +138,19 @@ class AliExpressApiClient implements AliExpressApiClientInterface
             );
         }
 
+        /** @var array<string, mixed> $data */
+
         // L'API AliExpress retourne les erreurs sous error_response
-        if (isset($data['error_response'])) {
-            $err = $data['error_response'];
+        if (isset($data['error_response']) && is_array($data['error_response'])) {
+            /** @var array<string, mixed> $err */
+            $err        = $data['error_response'];
+            $errCode    = isset($err['code'])     && is_scalar($err['code'])     ? (string) $err['code']     : '';
+            $errMsg     = isset($err['msg'])      && is_scalar($err['msg'])      ? (string) $err['msg']      : '';
+            $errSubCode = isset($err['sub_code']) && is_scalar($err['sub_code']) ? (string) $err['sub_code'] : '';
             throw new AliExpressApiException(
-                sprintf('[AliExpress] Erreur API %s : %s — %s', $method, $err['code'] ?? '', $err['msg'] ?? ''),
-                (int) ($err['code'] ?? 0),
-                (string) ($err['sub_code'] ?? ''),
+                sprintf('[AliExpress] Erreur API %s : %s — %s', $method, $errCode, $errMsg),
+                (int) $errCode,
+                $errSubCode,
             );
         }
 

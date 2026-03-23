@@ -14,6 +14,9 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class HomepageController extends AbstractController
 {
+    /**
+     * @param ProductRepositoryInterface<\Sylius\Component\Core\Model\ProductInterface> $productRepository
+     */
     public function __construct(
         private readonly ProductRepositoryInterface $productRepository,
         private readonly ChannelContextInterface $channelContext,

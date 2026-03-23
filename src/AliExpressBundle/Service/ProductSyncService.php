@@ -21,6 +21,7 @@ class ProductSyncService implements ProductSyncServiceInterface
         private readonly ProductEndpointInterface    $productEndpoint,
         private readonly ProductPersistenceInterface $persistence,
         private readonly LoggerInterface             $logger,
+        /** @var array<int, string> */
         private readonly array                       $keywords,
         private readonly int                         $batchSize,
     ) {

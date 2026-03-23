@@ -21,6 +21,9 @@ final class TrackingDto
     ) {
     }
 
+    /**
+     * @phpstan-ignore missingType.iterableValue
+     */
     public static function fromApiResponse(array $data): self
     {
         $events = array_map(

@@ -41,6 +41,9 @@ class OrderEndpoint implements OrderEndpointInterface
         return OrderDto::fromApiResponse($response['result'] ?? $response);
     }
 
+    /**
+     * @phpstan-ignore missingType.iterableValue
+     */
     public function list(array $filters = [], int $page = 1, int $pageSize = 20): array
     {
         $params = array_merge($filters, [

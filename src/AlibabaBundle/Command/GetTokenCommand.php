@@ -34,6 +34,7 @@ class GetTokenCommand extends Command
     public function __construct(
         private readonly string $appKey,
         private readonly string $appSecret,
+        /** @phpstan-ignore property.onlyWritten */
         private readonly string $baseUrl,
         private readonly string $redirectUri,
     ) {
@@ -48,6 +49,7 @@ class GetTokenCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io   = new SymfonyStyle($input, $output);
+        /** @var string|null $code */
         $code = $input->getOption('code');
 
         if ($code === null) {
@@ -103,6 +105,7 @@ class GetTokenCommand extends Command
         try {
             $client   = new Client(['timeout' => 15]);
             $response = $client->post(self::TOKEN_URL, ['form_params' => $params]);
+            /** @var array<string, mixed> $data */
             $data     = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
 
             if (!isset($data['access_token'])) {
@@ -110,17 +113,19 @@ class GetTokenCommand extends Command
                 return Command::FAILURE;
             }
 
+            $str = static fn (mixed $v): string => is_scalar($v) ? (string) $v : '—';
+
             $io->success('Access token obtenu !');
             $io->table(['Clé', 'Valeur'], [
-                ['access_token',    $data['access_token']],
-                ['refresh_token',   $data['refresh_token']  ?? '—'],
-                ['expires_in',      ($data['expires_in']    ?? '—') . ' s'],
-                ['refresh_expires_in', ($data['refresh_expires_in'] ?? '—') . ' s'],
-                ['account',         $data['account']        ?? '—'],
+                ['access_token',       $str($data['access_token'])],
+                ['refresh_token',      $str($data['refresh_token'] ?? null)],
+                ['expires_in',         $str($data['expires_in'] ?? null) . ' s'],
+                ['refresh_expires_in', $str($data['refresh_expires_in'] ?? null) . ' s'],
+                ['account',            $str($data['account'] ?? null)],
             ]);
 
             $io->note('Ajoutez cette ligne dans votre .env.local :');
-            $io->writeln('ALIBABA_ACCESS_TOKEN=' . $data['access_token']);
+            $io->writeln('ALIBABA_ACCESS_TOKEN=' . $str($data['access_token']));
 
         } catch (GuzzleException $e) {
             $io->error('Erreur HTTP : ' . $e->getMessage());

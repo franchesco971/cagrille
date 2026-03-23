@@ -31,6 +31,10 @@ use Symfony\Component\HttpFoundation\File\File;
  */
 class SyliusProductPersistence implements ProductPersistenceInterface
 {
+    /**
+     * @param ProductFactoryInterface<\Sylius\Component\Core\Model\ProductInterface> $productFactory
+     * @param ChannelRepositoryInterface<\Sylius\Component\Core\Model\ChannelInterface> $channelRepository
+     */
     public function __construct(
         private readonly ProductFactoryInterface    $productFactory,
         private readonly FactoryInterface           $channelPricingFactory,
@@ -223,6 +227,7 @@ class SyliusProductPersistence implements ProductPersistenceInterface
         $variant->setCurrentLocale('fr_FR');
 
         foreach ($this->channelRepository->findAll() as $channel) {
+            /** @var \Sylius\Component\Core\Model\ChannelInterface $channel */
             $channelCode    = $channel->getCode();
             $channelPricing = $variant->getChannelPricingForChannel($channel);
 

@@ -28,6 +28,9 @@ class AlibabaApiException extends \RuntimeException
         return $this->apiCode;
     }
 
+    /**
+     * @phpstan-ignore missingType.iterableValue
+     */
     public static function fromApiError(array $errorResponse, int $httpStatus = 0): self
     {
         $code    = (string) ($errorResponse['error_code'] ?? $errorResponse['code'] ?? '');

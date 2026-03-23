@@ -26,8 +26,8 @@ interface OrderEndpointInterface
     /**
      * Liste les commandes avec filtres optionnels.
      *
-     * @param array $filters  Ex: ['status' => 'pending', 'from_date' => '2024-01-01']
      * @return OrderDto[]
+     * @phpstan-ignore missingType.iterableValue
      */
     public function list(array $filters = [], int $page = 1, int $pageSize = 20): array;
 

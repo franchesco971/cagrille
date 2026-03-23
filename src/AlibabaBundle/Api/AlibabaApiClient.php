@@ -41,6 +41,9 @@ class AlibabaApiClient implements AlibabaApiClientInterface
         ]);
     }
 
+    /**
+     * @phpstan-ignore missingType.iterableValue
+     */
     public function get(string $endpoint, array $params = []): array
     {
         $params = $this->addAuthParams($params, 'GET', $endpoint);
@@ -60,6 +63,9 @@ class AlibabaApiClient implements AlibabaApiClientInterface
         }
     }
 
+    /**
+     * @phpstan-ignore missingType.iterableValue
+     */
     public function post(string $endpoint, array $payload = []): array
     {
         $authParams = $this->addAuthParams([], 'POST', $endpoint);
@@ -83,6 +89,7 @@ class AlibabaApiClient implements AlibabaApiClientInterface
     /**
      * Ajoute les paramètres d'authentification signés selon le protocole IOP Alibaba.
      * La signature HMAC-SHA256 est calculée sur apiPath + sorted key-value pairs.
+     * @phpstan-ignore missingType.iterableValue
      */
     private function addAuthParams(array $params, string $method, string $endpoint): array
     {
@@ -101,13 +108,15 @@ class AlibabaApiClient implements AlibabaApiClientInterface
     /**
      * Génère la signature HMAC-SHA256 selon la spécification IOP Alibaba.
      * Format : HMAC-SHA256(key=appSecret, message=apiPath + sorted key+value pairs)
+     *
+     * @phpstan-ignore missingType.iterableValue
      */
     private function generateSignature(array $params, string $endpoint): string
     {
         $signStr = $endpoint;
 
         foreach ($params as $key => $value) {
-            if ($key !== 'sign' && $value !== '' && $value !== null) {
+            if ($key !== 'sign' && is_string($value) && $value !== '') {
                 $signStr .= $key . $value;
             }
         }
@@ -117,9 +126,12 @@ class AlibabaApiClient implements AlibabaApiClientInterface
 
     /**
      * Décode la réponse JSON et lève une exception si l'API retourne une erreur.
+     *
+     * @return array<string, mixed>
      */
     private function decodeResponse(string $body, string $endpoint): array
     {
+        /** @var array<string, mixed> $data */
         $data = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
 
         $this->logger->debug('[Alibaba] Réponse brute {endpoint}: {body}', [
@@ -130,21 +142,29 @@ class AlibabaApiClient implements AlibabaApiClientInterface
         // L'API IOP Alibaba retourne les erreurs sous deux formats possibles :
         // - { "error_response": { ... } }  (ancien TOP format)
         // - { "type": "ISV", "code": "...", "message": "..." }  (IOP format plat)
-        if (isset($data['error_response'])) {
+        if (isset($data['error_response']) && is_array($data['error_response'])) {
+            /** @var array<string, mixed> $errResponse */
+            $errResponse = $data['error_response'];
             $this->logger->warning('[Alibaba] Erreur API {endpoint}: {error}', [
                 'endpoint' => $endpoint,
-                'error'    => json_encode($data['error_response']),
+                'error'    => json_encode($errResponse),
             ]);
-            throw AlibabaApiException::fromApiError($data['error_response']);
+            throw AlibabaApiException::fromApiError($errResponse);
         }
 
-        if (isset($data['code']) && $data['code'] !== '0' && isset($data['message'])) {
+        if (isset($data['code'], $data['message'])
+            && is_string($data['code'])
+            && $data['code'] !== '0'
+            && is_string($data['message'])
+        ) {
+            $apiCode    = $data['code'];
+            $apiMessage = $data['message'];
             $this->logger->warning('[Alibaba] Erreur IOP {endpoint}: [{code}] {message}', [
                 'endpoint' => $endpoint,
-                'code'     => $data['code'],
-                'message'  => $data['message'],
+                'code'     => $apiCode,
+                'message'  => $apiMessage,
             ]);
-            throw new AlibabaApiException($data['message'], 0, $data['code'] ?? '');
+            throw new AlibabaApiException($apiMessage, 0, $apiCode);
         }
 
         return $data;

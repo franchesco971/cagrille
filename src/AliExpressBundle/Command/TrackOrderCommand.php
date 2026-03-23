@@ -39,8 +39,10 @@ class TrackOrderCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io          = new SymfonyStyle($input, $output);
-        $orderId     = (string) $input->getOption('order');
-        $trackingNum = (string) $input->getOption('tracking');
+        $rawOrderId  = $input->getOption('order');
+        $rawTracking = $input->getOption('tracking');
+        $orderId     = is_string($rawOrderId)  ? $rawOrderId  : '';
+        $trackingNum = is_string($rawTracking) ? $rawTracking : '';
 
         if ($orderId === '' || $trackingNum === '') {
             $io->error('Les options --order et --tracking sont obligatoires.');

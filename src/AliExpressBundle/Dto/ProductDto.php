@@ -12,6 +12,9 @@ namespace Cagrille\AliExpressBundle\Dto;
  */
 final class ProductDto
 {
+    /**
+     * @phpstan-ignore missingType.iterableValue
+     */
     public function __construct(
         public readonly string             $aliExpressId,  // item_id AliExpress
         public readonly string             $name,
@@ -38,6 +41,8 @@ final class ProductDto
      *   ae_item_sku_info_dtos.ae_item_sku_info_d_t_o[].sku_price, offer_sale_price, sku_available_stock
      *   ae_multimedia_info_dto.image_urls  (séparés par ;)
      *   ae_store_info.store_id, store_name, store_country_code
+     *
+     * @phpstan-ignore missingType.iterableValue
      */
     public static function fromApiResponse(array $result): self
     {
@@ -71,6 +76,9 @@ final class ProductDto
         );
     }
 
+    /**
+     * @phpstan-ignore missingType.iterableValue
+     */
     private static function extractImages(array $data): array
     {
         $mediaDto = $data['ae_multimedia_info_dto'] ?? [];

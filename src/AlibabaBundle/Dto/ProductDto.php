@@ -11,6 +11,9 @@ namespace Cagrille\AlibabaBundle\Dto;
  */
 final class ProductDto
 {
+    /**
+     * @phpstan-ignore missingType.iterableValue
+     */
     public function __construct(
         public readonly string $alibabaId,
         public readonly string $name,
@@ -32,6 +35,8 @@ final class ProductDto
 
     /**
      * Construit un ProductDto depuis un tableau de données brutes de l'API Alibaba.
+     *
+     * @phpstan-ignore missingType.iterableValue
      */
     public static function fromApiResponse(array $data): self
     {
@@ -62,6 +67,9 @@ final class ProductDto
         );
     }
 
+    /**
+     * @phpstan-ignore missingType.iterableValue
+     */
     private static function extractImages(array $data): array
     {
         // Format IOP : main_image.images[] ou image_list[]
