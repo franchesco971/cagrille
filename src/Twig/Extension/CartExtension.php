@@ -19,6 +19,7 @@ final class CartExtension extends AbstractExtension
     {
         return [
             new TwigFunction('cagrille_cart_count', $this->getCartCount(...)),
+            new TwigFunction('cagrille_cart_total', $this->getCartTotal(...)),
         ];
     }
 
@@ -27,6 +28,17 @@ final class CartExtension extends AbstractExtension
         try {
             $cart = $this->cartContext->getCart();
             return $cart->getItems()->count();
+        } catch (CartNotFoundException) {
+            return 0;
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    public function getCartTotal(): int
+    {
+        try {
+            return $this->cartContext->getCart()->getTotal();
         } catch (CartNotFoundException) {
             return 0;
         } catch (\Throwable) {
