@@ -24,6 +24,11 @@
             {# ── Actions (recherche, devise, compte, panier) ──── #}
             <div class="flex items-center gap-4">
 
+                {# Sélecteur de locale #}
+                {% set available_locales = sylius.channel.locales | map(l => l.code) %}
+                {% set active_locale = sylius.localeCode %}
+                {% include '@SyliusShop/shared/layout/base/header/top_bar/locale_switcher.html.twig' %}
+
                 {# Sélecteur de devise #}
                 {% set available_currencies = sylius.channel.currencies | map(c => c.code) %}
                 {% set active_currency = sylius.currencyCode %}
