@@ -21,8 +21,13 @@
                 <a href="{{ path('sylius_shop_product_index', {'slug': 'charbons'}) }}" class="nav-link">Charbons</a>
             </div>
 
-            {# ── Actions (recherche, compte, panier) ───────── #}
+            {# ── Actions (recherche, devise, compte, panier) ──── #}
             <div class="flex items-center gap-4">
+
+                {# Sélecteur de devise #}
+                {% set available_currencies = sylius.channel.currencies | map(c => c.code) %}
+                {% set active_currency = sylius.currencyCode %}
+                {% include '@SyliusShop/shared/layout/base/header/top_bar/currency_switcher.html.twig' %}
 
                 {# Recherche #}
                 <form action="{{ path('sylius_shop_product_index', {'slug': 'barbecues'}) }}" method="get"
