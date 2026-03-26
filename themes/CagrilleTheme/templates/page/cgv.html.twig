@@ -1,0 +1,236 @@
+{% extends '@SyliusShop/shared/layout/base.html.twig' %}
+
+{% block title %}Conditions Générales de Vente — Cagrille{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+
+    {# En-tête #}
+    <div class="mb-12">
+        <h1 class="font-display text-4xl tracking-widest text-ember-400 mb-4">CONDITIONS GÉNÉRALES DE VENTE</h1>
+        <div class="fire-divider"></div>
+        <p class="text-ash-400 text-sm mt-4">
+            Les présentes Conditions Générales de Vente (CGV) régissent toutes les ventes conclues sur le site
+            <strong class="text-ash-200">cagrille.fr</strong> entre la société Cagrille et ses clients.
+            Toute commande implique l'acceptation sans réserve des présentes CGV.
+        </p>
+    </div>
+
+    <div class="space-y-10 text-ash-300 leading-relaxed">
+
+        {# 1. Identification du vendeur #}
+        <section>
+            <h2 class="font-display text-xl text-ember-400 tracking-wide mb-4">1. IDENTIFICATION DU VENDEUR</h2>
+            <div class="bg-coal-900 border border-coal-700 rounded-lg p-6 space-y-2 text-sm">
+                <p><span class="text-ash-100 font-medium">Société :</span> Copolink</p>
+                <p><span class="text-ash-100 font-medium">Siège social :</span> 14 rue Basset, Paris, France</p>
+                <p><span class="text-ash-100 font-medium">SIRET :</span> 88043224000021</p>
+                <p><span class="text-ash-100 font-medium">Email :</span>
+                    <a href="mailto:contact.cagrille@gmail.com" class="text-ember-400 hover:text-ember-300 transition-colors">contact.cagrille@gmail.com</a>
+                </p>
+            </div>
+        </section>
+
+        {# 2. Champ d'application #}
+        <section>
+            <h2 class="font-display text-xl text-ember-400 tracking-wide mb-4">2. CHAMP D'APPLICATION</h2>
+            <p class="text-sm">
+                Les présentes CGV s'appliquent à toutes les ventes de produits effectuées par Cagrille via son site
+                internet, à destination de clients particuliers (consommateurs) et professionnels résidant en France
+                métropolitaine, dans les DOM-TOM et à l'international selon les zones de livraison disponibles.
+            </p>
+            <p class="text-sm mt-3">
+                Cagrille se réserve le droit de modifier ses CGV à tout moment. Les CGV applicables sont celles en
+                vigueur à la date de la commande.
+            </p>
+        </section>
+
+        {# 3. Produits #}
+        <section>
+            <h2 class="font-display text-xl text-ember-400 tracking-wide mb-4">3. PRODUITS</h2>
+            <p class="text-sm">
+                Les produits proposés à la vente sont décrits et présentés avec la plus grande exactitude possible.
+                Les photographies illustrant les produits n'entrent pas dans le champ contractuel. En cas d'erreur ou
+                d'omission, la responsabilité de Cagrille ne pourra être engagée.
+            </p>
+            <p class="text-sm mt-3">
+                Cagrille se réserve le droit de modifier à tout moment son catalogue de produits, sans préavis.
+                Les offres de produits s'entendent dans la limite des stocks disponibles.
+            </p>
+        </section>
+
+        {# 4. Prix #}
+        <section>
+            <h2 class="font-display text-xl text-ember-400 tracking-wide mb-4">4. PRIX</h2>
+            <p class="text-sm">
+                Les prix sont indiqués en euros (€) toutes taxes comprises (TTC), hors frais de livraison.
+                Les frais de livraison sont indiqués avant validation définitive de la commande.
+            </p>
+            <p class="text-sm mt-3">
+                Cagrille se réserve le droit de modifier ses prix à tout moment. Les produits sont facturés sur la
+                base des tarifs en vigueur au moment de la validation de la commande.
+            </p>
+            <p class="text-sm mt-3">
+                En cas d'erreur manifeste de prix (prix anormalement bas résultant d'une erreur technique),
+                Cagrille se réserve le droit d'annuler la commande et d'en informer le client.
+            </p>
+        </section>
+
+        {# 5. Commande #}
+        <section>
+            <h2 class="font-display text-xl text-ember-400 tracking-wide mb-4">5. COMMANDE</h2>
+            <p class="text-sm">Le processus de commande se déroule en plusieurs étapes :</p>
+            <ol class="list-decimal list-inside text-sm mt-3 space-y-1 ml-2">
+                <li>Sélection des produits et ajout au panier</li>
+                <li>Vérification du contenu du panier</li>
+                <li>Identification ou création d'un compte client</li>
+                <li>Saisie de l'adresse de livraison</li>
+                <li>Choix du mode de livraison</li>
+                <li>Choix du mode de paiement et règlement</li>
+                <li>Confirmation de commande par email</li>
+            </ol>
+            <p class="text-sm mt-3">
+                La commande n'est définitivement enregistrée qu'après réception du paiement. Un email de confirmation
+                récapitulant la commande est envoyé automatiquement à l'adresse indiquée par le client.
+            </p>
+            <p class="text-sm mt-3">
+                Cagrille se réserve le droit de refuser ou d'annuler toute commande pour motif légitime (commande
+                anormale, litiges antérieurs, suspicion de fraude, rupture de stock).
+            </p>
+        </section>
+
+        {# 6. Paiement #}
+        <section>
+            <h2 class="font-display text-xl text-ember-400 tracking-wide mb-4">6. PAIEMENT</h2>
+            <p class="text-sm">
+                Le règlement s'effectue en ligne au moment de la commande. Les moyens de paiement acceptés sont :
+            </p>
+            <ul class="list-disc list-inside text-sm mt-3 space-y-1 ml-2">
+                <li>Carte bancaire (Visa, Mastercard, American Express)</li>
+                <li>PayPal</li>
+                <li>Tout autre moyen affiché lors du processus de commande</li>
+            </ul>
+            <p class="text-sm mt-3">
+                Les transactions sont sécurisées par cryptage SSL. Cagrille ne stocke aucune donnée bancaire.
+            </p>
+            <p class="text-sm mt-3">
+                En cas de paiement refusé ou d'impayé, toute commande est automatiquement annulée.
+            </p>
+        </section>
+
+        {# 7. Livraison #}
+        <section>
+            <h2 class="font-display text-xl text-ember-400 tracking-wide mb-4">7. LIVRAISON</h2>
+            <p class="text-sm">
+                Les produits sont livrés à l'adresse indiquée lors de la commande. Les délais de livraison sont
+                communiqués à titre indicatif lors du processus d'achat et varient selon la destination et le
+                fournisseur.
+            </p>
+            <p class="text-sm mt-3">
+                En cas de retard de livraison significatif non imputable au client, Cagrille en informera le client
+                dans les meilleurs délais. Un retard de livraison ne peut donner lieu à des dommages et intérêts.
+            </p>
+            <p class="text-sm mt-3">
+                Tout colis endommagé à la réception doit faire l'objet de réserves écrites auprès du transporteur
+                dans les 3 jours ouvrés suivant la réception.
+            </p>
+        </section>
+
+        {# 8. Droit de rétractation #}
+        <section>
+            <h2 class="font-display text-xl text-ember-400 tracking-wide mb-4">8. DROIT DE RÉTRACTATION</h2>
+            <p class="text-sm">
+                Conformément à l'article L.221-18 du Code de la consommation, le client particulier (consommateur)
+                dispose d'un délai de <strong class="text-ash-100">14 jours calendaires</strong> à compter de la
+                réception du produit pour exercer son droit de rétractation, sans avoir à justifier sa décision.
+            </p>
+            <p class="text-sm mt-3">
+                Pour exercer ce droit, le client doit notifier sa décision à :
+                <a href="mailto:contact.cagrille@gmail.com" class="text-ember-400 hover:text-ember-300 transition-colors">contact.cagrille@gmail.com</a>
+                avant l'expiration du délai.
+            </p>
+            <p class="text-sm mt-3">
+                Le produit doit être retourné dans son emballage d'origine, en parfait état, accompagné du bon de
+                retour. Les frais de retour sont à la charge du client, sauf en cas de produit défectueux ou de
+                non-conformité.
+            </p>
+            <p class="text-sm mt-3">
+                Le remboursement sera effectué dans un délai de 14 jours suivant la réception du retour, par le
+                même moyen de paiement que celui utilisé lors de l'achat.
+            </p>
+        </section>
+
+        {# 9. Garanties #}
+        <section>
+            <h2 class="font-display text-xl text-ember-400 tracking-wide mb-4">9. GARANTIES</h2>
+            <p class="text-sm">
+                Conformément aux articles L.217-4 et suivants du Code de la consommation, tous les produits vendus
+                bénéficient de la <strong class="text-ash-100">garantie légale de conformité</strong> (2 ans) et
+                de la <strong class="text-ash-100">garantie contre les vices cachés</strong> (articles 1641 et
+                suivants du Code civil).
+            </p>
+            <p class="text-sm mt-3">
+                Certains produits peuvent bénéficier d'une garantie commerciale supplémentaire du fabricant,
+                précisée dans leur fiche produit.
+            </p>
+        </section>
+
+        {# 10. Responsabilité #}
+        <section>
+            <h2 class="font-display text-xl text-ember-400 tracking-wide mb-4">10. RESPONSABILITÉ</h2>
+            <p class="text-sm">
+                Cagrille ne saurait être tenue responsable des dommages indirects résultant de l'utilisation des
+                produits vendus. La responsabilité de Cagrille est limitée au montant de la commande concernée.
+            </p>
+            <p class="text-sm mt-3">
+                Cagrille ne peut être tenue responsable des retards ou inexécutions dus à des événements de force
+                majeure (catastrophes naturelles, grèves, pandémies, blocages de transport, etc.).
+            </p>
+        </section>
+
+        {# 11. Données personnelles #}
+        <section>
+            <h2 class="font-display text-xl text-ember-400 tracking-wide mb-4">11. DONNÉES PERSONNELLES</h2>
+            <p class="text-sm">
+                Les données collectées lors de la commande sont traitées conformément à notre
+                <a href="{{ path('cagrille_page_mentions_legales') }}" class="text-ember-400 hover:text-ember-300 transition-colors">politique de confidentialité</a>
+                et aux dispositions du RGPD.
+            </p>
+        </section>
+
+        {# 12. Litiges #}
+        <section>
+            <h2 class="font-display text-xl text-ember-400 tracking-wide mb-4">12. LITIGES ET MÉDIATION</h2>
+            <p class="text-sm">
+                En cas de litige, le client est invité à contacter en premier lieu le service client à
+                <a href="mailto:contact.cagrille@gmail.com" class="text-ember-400 hover:text-ember-300 transition-colors">contact.cagrille@gmail.com</a>
+                afin de trouver une solution amiable.
+            </p>
+            <p class="text-sm mt-3">
+                Conformément à l'article L.616-1 du Code de la consommation, le client particulier peut recourir
+                gratuitement à un médiateur de la consommation en cas de litige non résolu. Les coordonnées du
+                médiateur compétent seront communiquées sur demande.
+            </p>
+            <p class="text-sm mt-3">
+                La plateforme européenne de résolution des litiges en ligne est accessible à :
+                <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer"
+                   class="text-ember-400 hover:text-ember-300 transition-colors">https://ec.europa.eu/consumers/odr</a>.
+            </p>
+            <p class="text-sm mt-3">
+                À défaut de règlement amiable, tout litige sera soumis aux tribunaux français compétents.
+                Les présentes CGV sont soumises au droit français.
+            </p>
+        </section>
+
+        {# Date de mise à jour #}
+        <p class="text-ash-500 text-xs border-t border-coal-700 pt-6">
+            Dernière mise à jour : mars 2026
+        </p>
+
+    </div>
+</div>
+{% endblock %}

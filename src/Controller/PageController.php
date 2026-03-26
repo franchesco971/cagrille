@@ -15,4 +15,10 @@ final class PageController extends AbstractController
     {
         return $this->render('page/mentions-legales.html.twig');
     }
+
+    #[Route('/{_locale}/conditions-generales-de-vente', name: 'cagrille_page_cgv', requirements: ['_locale' => '^[A-Za-z]{2,4}(_([A-Za-z]{4}|[0-9]{3}))?(_([A-Za-z]{2}|[0-9]{3}))?$'])]
+    public function cgv(): Response
+    {
+        return $this->render('page/cgv.html.twig');
+    }
 }
