@@ -1,0 +1,130 @@
+{% extends '@SyliusShop/shared/layout/base.html.twig' %}
+
+{% block title %}Mentions légales — Cagrille{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+
+    {# En-tête #}
+    <div class="mb-12">
+        <h1 class="font-display text-4xl tracking-widest text-ember-400 mb-4">MENTIONS LÉGALES</h1>
+        <div class="fire-divider"></div>
+        <p class="text-ash-400 text-sm mt-4">Conformément aux dispositions de la loi n° 2004-575 du 21 juin 2004
+            pour la Confiance dans l'Économie Numérique (LCEN).</p>
+    </div>
+
+    <div class="space-y-10 text-ash-300 leading-relaxed">
+
+        {# 1. Éditeur du site #}
+        <section>
+            <h2 class="font-display text-xl text-ember-400 tracking-wide mb-4">1. ÉDITEUR DU SITE</h2>
+            <div class="bg-coal-900 border border-coal-700 rounded-lg p-6 space-y-2 text-sm">
+                <p><span class="text-ash-100 font-medium">Dénomination sociale :</span> Copolink</p>
+                <p><span class="text-ash-100 font-medium">Forme juridique :</span> Entreprise unipersonnelle à responsabilité limitée (EURL)</p>
+                <p><span class="text-ash-100 font-medium">Capital social :</span> 1 000 €</p>
+                <p><span class="text-ash-100 font-medium">Siège social :</span> 14 rue Basset, Paris, France</p>
+                <p><span class="text-ash-100 font-medium">SIRET :</span> 88043224000021</p>
+                <p><span class="text-ash-100 font-medium">RCS :</span> Paris - B 880 432 240</p>
+                <p><span class="text-ash-100 font-medium">N° TVA intracommunautaire :</span> FR21880432240</p>
+                <p><span class="text-ash-100 font-medium">Directeur de la publication :</span> COPOL Francis</p>
+                <p><span class="text-ash-100 font-medium">Email : contact.copolink@gmail.com</span>
+                    <a href="mailto:contact@cagrille.com" class="text-ember-400 hover:text-ember-300 transition-colors">contact@cagrille.com</a>
+                </p>
+                <!-- <p><span class="text-ash-100 font-medium">Téléphone :</span> [Numéro à compléter]</p> -->
+            </div>
+        </section>
+
+        {# 2. Hébergement #}
+        <section>
+            <h2 class="font-display text-xl text-ember-400 tracking-wide mb-4">2. HÉBERGEMENT</h2>
+            <div class="bg-coal-900 border border-coal-700 rounded-lg p-6 space-y-2 text-sm">
+                <p><span class="text-ash-100 font-medium">Hébergeur :</span> Hostinger</p>
+                <p><span class="text-ash-100 font-medium">Adresse :</span> 61 Lordou Vironos str., 6023 Larnaca, Chypre</p>
+                <p><span class="text-ash-100 font-medium">Site web :</span> https://www.hostinger.com/</p>
+            </div>
+        </section>
+
+        {# 3. Propriété intellectuelle #}
+        <section>
+            <h2 class="font-display text-xl text-ember-400 tracking-wide mb-4">3. PROPRIÉTÉ INTELLECTUELLE</h2>
+            <p class="text-sm">
+                L'ensemble du contenu de ce site (textes, images, vidéos, graphismes, logos, icônes, sons, logiciels, etc.)
+                est la propriété exclusive de Cagrille ou de ses partenaires, et est protégé par les lois françaises
+                et internationales relatives à la propriété intellectuelle.
+            </p>
+            <p class="text-sm mt-3">
+                Toute reproduction, représentation, modification, publication, transmission, dénaturation, totale ou
+                partielle du site ou de son contenu, par quelque procédé que ce soit, et sur quelque support que ce soit,
+                est interdite sans l'autorisation écrite préalable de Cagrille, sous peine de poursuites judiciaires.
+            </p>
+        </section>
+
+        {# 4. Données personnelles #}
+        <section>
+            <h2 class="font-display text-xl text-ember-400 tracking-wide mb-4">4. DONNÉES PERSONNELLES</h2>
+            <p class="text-sm">
+                Cagrille traite vos données personnelles conformément au Règlement Général sur la Protection des Données
+                (RGPD – Règlement UE 2016/679) et à la loi Informatique et Libertés.
+            </p>
+            <p class="text-sm mt-3">
+                Les données collectées lors de votre navigation (nom, prénom, adresse email, adresse de livraison, etc.)
+                sont utilisées exclusivement dans le cadre de la gestion de vos commandes et de notre relation commerciale.
+                Elles ne sont jamais cédées à des tiers à des fins commerciales.
+            </p>
+            <p class="text-sm mt-3">
+                Conformément à la réglementation en vigueur, vous disposez d'un droit d'accès, de rectification, de
+                suppression, de portabilité et d'opposition concernant vos données. Pour exercer ces droits, contactez-nous à :
+                <a href="mailto:contact.cagrille@gmail.com" class="text-ember-400 hover:text-ember-300 transition-colors">contact.cagrille@gmail.com</a>.
+            </p>
+            <p class="text-sm mt-3">
+                En cas de litige, vous pouvez introduire une réclamation auprès de la
+                <a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer" class="text-ember-400 hover:text-ember-300 transition-colors">CNIL</a>
+                (Commission Nationale de l'Informatique et des Libertés).
+            </p>
+        </section>
+
+        {# 5. Cookies #}
+        <section>
+            <h2 class="font-display text-xl text-ember-400 tracking-wide mb-4">5. COOKIES</h2>
+            <p class="text-sm">
+                Ce site utilise des cookies techniques strictement nécessaires à son fonctionnement (gestion de session,
+                panier d'achats, authentification) et, sous réserve de votre consentement, des cookies analytiques
+                permettant de mesurer l'audience du site.
+            </p>
+            <p class="text-sm mt-3">
+                Vous pouvez configurer vos préférences en matière de cookies à tout moment via les paramètres de votre
+                navigateur, ou en refusant les cookies non essentiels lors de votre première visite.
+            </p>
+        </section>
+
+        {# 6. Liens hypertextes #}
+        <section>
+            <h2 class="font-display text-xl text-ember-400 tracking-wide mb-4">6. LIENS HYPERTEXTES</h2>
+            <p class="text-sm">
+                Le site Cagrille peut contenir des liens vers d'autres sites. Ces liens sont fournis à titre informatif.
+                Cagrille n'exerce aucun contrôle sur ces sites et décline toute responsabilité quant à leur contenu
+                ou aux pratiques de confidentialité qui y sont appliquées.
+            </p>
+        </section>
+
+        {# 7. Droit applicable #}
+        <section>
+            <h2 class="font-display text-xl text-ember-400 tracking-wide mb-4">7. DROIT APPLICABLE</h2>
+            <p class="text-sm">
+                Les présentes mentions légales sont régies par le droit français. En cas de litige, et à défaut
+                de résolution amiable, les tribunaux français seront seuls compétents.
+            </p>
+        </section>
+
+        {# Date de mise à jour #}
+        <p class="text-ash-500 text-xs border-t border-coal-700 pt-6">
+            Dernière mise à jour : mars 2026
+        </p>
+
+    </div>
+</div>
+{% endblock %}

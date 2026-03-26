@@ -33,7 +33,7 @@
             sélectionnés chez les meilleurs fournisseurs mondiaux.
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="{{ path('sylius_shop_product_index', {'slug': 'category'}) }}" class="btn-fire text-lg px-8 py-4">
+            <a href="{{ path('sylius_shop_product_index', {'slug': 'categorie'}) }}" class="btn-fire text-lg px-8 py-4">
                 🛒 Découvrir les produits
             </a>
         </div>
@@ -61,7 +61,7 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
             {% set categories = [
                 { label: 'Barbecues',   icon: '🍖', slug: 'barbecues',   desc: 'Charbon, gaz, électrique' },
-                { label: 'Grills',      icon: '🥩', slug: 'grills',      desc: 'Plancha et grilles' },
+                { label: 'Grills',      icon: '🥩', slug: 'big-bbq',      desc: 'Plancha et grilles' },
                 { label: 'Accessoires', icon: '🔧', slug: 'accessoires', desc: 'Spatules, pinces, gants' },
                 { label: 'Charbons',    icon: '⚫', slug: 'charbons',    desc: 'Charbon et briquettes' },
             ] %}
