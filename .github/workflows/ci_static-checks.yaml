@@ -93,6 +93,37 @@ jobs:
             -   name: "Install dependencies"
                 run: composer update --no-interaction --no-scripts
 
+            -   name: "Create .env for CI"
+                run: |
+                    cp .env.ci .env
+                    # Supprime la ligne APP_SECRET=$APP_SECRET du template .env.ci
+                    sed -i '/^APP_SECRET=/d' .env
+                    echo "APP_DEBUG=0" >> .env
+                    echo "APP_RUNTIME_MODE=web=1" >> .env
+                    echo "APP_SECRET=ci_placeholder_secret_not_used_in_static_checks" >> .env
+                    echo "APP_SHARE_DIR=var/share" >> .env
+                    echo "DATABASE_URL=${DATABASE_URL}" >> .env
+                    echo "MESSENGER_TRANSPORT_DSN=sync://" >> .env
+                    echo "SYLIUS_MESSENGER_TRANSPORT_MAIN_DSN=sync://" >> .env
+                    echo "SYLIUS_MESSENGER_TRANSPORT_MAIN_FAILED_DSN=sync://" >> .env
+                    echo "SYLIUS_MESSENGER_TRANSPORT_CATALOG_PROMOTION_REMOVAL_DSN=sync://" >> .env
+                    echo "SYLIUS_MESSENGER_TRANSPORT_CATALOG_PROMOTION_REMOVAL_FAILED_DSN=sync://" >> .env
+                    echo "SYLIUS_MESSENGER_TRANSPORT_PAYMENT_REQUEST_DSN=sync://" >> .env
+                    echo "SYLIUS_MESSENGER_TRANSPORT_PAYMENT_REQUEST_FAILED_DSN=sync://" >> .env
+                    echo "JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem" >> .env
+                    echo "JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem" >> .env
+                    echo "JWT_PASSPHRASE=ci_passphrase" >> .env
+                    echo "MAILER_DSN=null://null" >> .env
+                    echo "SYLIUS_PAYMENT_ENCRYPTION_KEY_PATH=%kernel.project_dir%/config/encryption/test.key" >> .env
+                    echo "DEFAULT_URI=http://localhost" >> .env
+                    echo "ALIBABA_APP_KEY=ci" >> .env
+                    echo "ALIBABA_APP_SECRET=ci" >> .env
+                    echo "ALIBABA_ACCESS_TOKEN=ci" >> .env
+                    echo "ALIBABA_BASE_URL=https://api.alibaba.com" >> .env
+                    echo "ALIBABA_TIMEOUT=30" >> .env
+                    echo "ALIBABA_SYNC_CATEGORIES=[]" >> .env
+                    echo "ALIBABA_SYNC_BATCH_SIZE=50" >> .env
+
 #            -   name: "Validate composer.json"
 #                run: composer validate --strict --no-check-version
 
