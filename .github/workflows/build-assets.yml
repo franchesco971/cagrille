@@ -1,16 +1,28 @@
 name: Build Sylius Assets
+
 on: [push]
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
-      - run: yarn install
-      - run: yarn build
-      - uses: actions/upload-artifact@v3
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build assets
+        run: yarn build
+
+      - name: Upload assets as artifact
+        uses: actions/upload-artifact@v4
         with:
           name: sylius-assets
           path: public/build/
