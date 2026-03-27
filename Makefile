@@ -1,4 +1,4 @@
-.PHONY: run
+.PHONY: run init-cagrille php-shell
 
 DOCKER_COMPOSE ?= docker compose
 # Avoid using root (0:0) as DOCKER_USER, especially in WSL2 environments
@@ -43,8 +43,11 @@ install-no-fixtures: ## Installer Sylius sans charger les fixtures (migrations u
 clean:
 	@ENV=$(ENV) DOCKER_USER=$(DOCKER_USER) $(DOCKER_COMPOSE) down -v
 
-php-shell:
+php-shell: ## Ouvrir un shell interactif dans le container PHP
 	@ENV=$(ENV) DOCKER_USER=$(DOCKER_USER) $(DOCKER_COMPOSE) exec php sh
+
+init-cagrille: ## Initialiser Sylius from scratch dans le container PHP (APP_ENV=dev par défaut)
+	@ENV=$(ENV) DOCKER_USER=$(DOCKER_USER) $(DOCKER_COMPOSE) exec -e APP_ENV=$(ENV) php sh bin/init-cagrille
 
 node-shell:
 	@ENV=$(ENV) DOCKER_USER=$(DOCKER_USER) $(DOCKER_COMPOSE) run --rm -i nodejs sh
