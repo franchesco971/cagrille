@@ -15,11 +15,14 @@ jobs:
         with:
           node-version: '18'
 
-      # - name: Install dependencies
-      #   run: yarn install
+      - name: Clean install dependencies
+        run: |
+          rm -rf node_modules/
+          yarn cache clean
+          yarn install --frozen-lockfile
 
       - name: Build assets
-        run: npm run build
+        run: npx encore production
 
       - name: Upload assets as artifact
         uses: actions/upload-artifact@v4
