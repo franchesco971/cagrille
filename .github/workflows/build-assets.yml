@@ -15,11 +15,11 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install dependencies
-        run: yarn install
+      # - name: Install dependencies
+      #   run: yarn install
 
       - name: Build assets
-        run: yarn build
+        run: npm run build
 
       - name: Upload assets as artifact
         uses: actions/upload-artifact@v4
