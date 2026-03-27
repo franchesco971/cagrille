@@ -19,7 +19,7 @@ jobs:
         run: cp .env.ci .env
 
       - name: Install Composer dependencies
-        run: composer install --no-dev --optimize-autoloader
+        run: composer install --optimize-autoloader
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -33,7 +33,7 @@ jobs:
           yarn install --frozen-lockfile
 
       - name: Build assets
-        run: npx encore production
+        run: npx encore dev
 
       - name: Upload assets as artifact
         uses: actions/upload-artifact@v4
