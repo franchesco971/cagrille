@@ -9,3 +9,6 @@
 
 controllers:
     resource: routing.controllers
+
+aliexpress_admin:
+    resource: routes/aliexpress_admin.yaml

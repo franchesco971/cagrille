@@ -1,0 +1,127 @@
+<div class="page-wrapper">
+    <div class="page-header d-print-none">
+        <div class="container-xl">
+            <div class="row g-2 align-items-center">
+                <div class="col">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item">
+                                <a href="{{ path('sylius_admin_dashboard') }}">Administration</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Synchronisation AliExpress</li>
+                        </ol>
+                    </nav>
+                    <h2 class="page-title">
+                        Synchronisation AliExpress
+                    </h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-body">
+        <div class="container-xl">
+
+            {# Flash messages #}
+            {% include '@SyliusAdmin/shared/crud/common/content/flashes.html.twig' %}
+
+            <div class="row row-cards mt-3">
+
+                {# ── Import d'un produit individuel ──────────────────────── #}
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Importer un produit</h3>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">
+                                Saisir l'identifiant AliExpress (<code>item_id</code>) d'un produit
+                                pour l'importer ou le mettre à jour dans le catalogue Sylius.
+                            </p>
+                            <form method="post" action="{{ path('cagrille_admin_aliexpress_sync_import_one') }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('aliexpress_import_one') }}">
+                                <div class="mb-3">
+                                    <label for="item_id" class="form-label">Item ID AliExpress</label>
+                                    <input
+                                        type="text"
+                                        id="item_id"
+                                        name="item_id"
+                                        class="form-control"
+                                        placeholder="ex : 1234567890"
+                                        required
+                                        pattern="[0-9]+"
+                                        title="Saisir uniquement des chiffres"
+                                    >
+                                    <div class="form-hint">Identifiant numérique du produit sur AliExpress.</div>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">
+                                    Importer ce produit
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── Synchronisation par mot-clé ─────────────────────────── #}
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Sync par mot-clé</h3>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">
+                                Rechercher et synchroniser tous les produits correspondant
+                                à un mot-clé sur AliExpress.
+                            </p>
+                            <form method="post" action="{{ path('cagrille_admin_aliexpress_sync_sync_keyword') }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('aliexpress_sync_keyword') }}">
+                                <div class="mb-3">
+                                    <label for="keyword" class="form-label">Mot-clé</label>
+                                    <input
+                                        type="text"
+                                        id="keyword"
+                                        name="keyword"
+                                        class="form-control"
+                                        placeholder="ex : barbecue"
+                                        required
+                                    >
+                                    <div class="form-hint">Le terme sera recherché sur l'API AliExpress.</div>
+                                </div>
+                                <button type="submit" class="btn btn-warning w-100">
+                                    Synchroniser ce mot-clé
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── Synchronisation complète ────────────────────────────── #}
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Synchronisation complète</h3>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">
+                                Lance la synchronisation sur <strong>tous les mots-clés</strong>
+                                configurés dans <code>ALIEXPRESS_SYNC_KEYWORDS</code>.
+                                Cette opération peut prendre plusieurs minutes.
+                            </p>
+                            <form method="post" action="{{ path('cagrille_admin_aliexpress_sync_sync_all') }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('aliexpress_sync_all') }}">
+                                <button
+                                    type="submit"
+                                    class="btn btn-danger w-100"
+                                    onclick="return confirm('Lancer la synchronisation complète ? Cela peut prendre plusieurs minutes.')"
+                                >
+                                    Lancer la sync complète
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>

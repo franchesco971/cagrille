@@ -1,0 +1,7 @@
+{% extends '@SyliusAdmin/shared/layout/base.html.twig' %}
+
+{% block title %}Synchronisation AliExpress — Admin{% endblock %}
+
+{% block body %}
+    {% hook 'cagrille_admin.aliexpress_sync.index' %}
+{% endblock %}

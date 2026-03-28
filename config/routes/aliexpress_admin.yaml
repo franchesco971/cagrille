@@ -1,0 +1,4 @@
+cagrille_admin_aliexpress:
+    resource: '../../src/AliExpressBundle/Controller/Admin/'
+    type: attribute
+    prefix: '/%sylius_admin.path_name%'
