@@ -89,34 +89,32 @@ class SyliusProductPersistence implements ProductPersistenceInterface
 
     private function mapTranslation(ProductInterface $product, ProductDto $dto): void
     {
-        $locale = 'fr_FR';
+        $name             = $dto->name ?: ('Produit AliExpress ' . $dto->aliExpressId);
+        $slug             = $this->buildSlug($dto);
+        $description      = $this->buildDescription($dto);
+        $shortDescription = $this->buildShortDescription($dto);
 
-        // Récupère la traduction existante ou en crée une nouvelle explicitement.
-        // On passe par getTranslation() qui gère le cache interne de Sylius
-        // (TranslatableTrait) et crée le ProductTranslation si absent.
-        /** @var ProductTranslationInterface $translation */
-        $translation = $product->getTranslation($locale);
+        foreach (['fr_FR', 'en_US'] as $locale) {
+            /** @var ProductTranslationInterface $translation */
+            $translation = $product->getTranslation($locale);
 
-        // Garantit que la locale est bien positionnée (cas d'une nouvelle traduction).
-        if ($translation->getLocale() === null) {
-            $translation->setLocale($locale);
+            if ($translation->getLocale() === null) {
+                $translation->setLocale($locale);
+            }
+
+            $translation->setName($name);
+            $translation->setSlug($slug);
+            $translation->setDescription($description);
+            $translation->setShortDescription($shortDescription);
         }
 
-        $name = $dto->name ?: ('Produit AliExpress ' . $dto->aliExpressId);
-
-        $translation->setName($name);
-        $translation->setSlug($this->buildSlug($dto));
-        $translation->setDescription($this->buildDescription($dto));
-        $translation->setShortDescription($this->buildShortDescription($dto));
-
-        $product->setCurrentLocale($locale);
-        $product->setFallbackLocale($locale);
+        $product->setCurrentLocale('fr_FR');
+        $product->setFallbackLocale('fr_FR');
         $product->setEnabled(true);
     }
 
     /**
-     * Description complète : contenu HTML de l'API, nettoyé des balises script/style
-     * pour sécuriser le rendu Twig avec |raw.
+     * Description complète : texte brut sans aucune balise HTML.
      */
     private function buildDescription(ProductDto $dto): ?string
     {
@@ -124,23 +122,20 @@ class SyliusProductPersistence implements ProductPersistenceInterface
             return null;
         }
 
-        return strip_tags($dto->description, '<h1><h2><h3><p><ul><ol><li><br><strong><em><img><a>');
+        $plain = strip_tags($dto->description);
+
+        return preg_replace('/\s+/', ' ', trim($plain)) ?: null;
     }
 
     /**
-     * Description courte : texte brut (sans balises) tronqué à 255 caractères.
+     * Description courte : texte brut tronqué à 255 caractères.
      * Utilisée dans les listings produits de Sylius.
      */
     private function buildShortDescription(ProductDto $dto): ?string
     {
-        if ($dto->description === '') {
-            return null;
-        }
+        $plain = $this->buildDescription($dto);
 
-        $plain = strip_tags($dto->description);
-        $plain = preg_replace('/\s+/', ' ', trim($plain)) ?? '';
-
-        return mb_substr($plain, 0, 255);
+        return $plain !== null ? mb_substr($plain, 0, 255) : null;
     }
 
     /**

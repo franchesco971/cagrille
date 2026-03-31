@@ -83,7 +83,6 @@ services:
         arguments:
             $appKey:         '%env(ALIEXPRESS_APP_KEY)%'
             $appSecret:      '%env(ALIEXPRESS_APP_SECRET)%'
-            $accessToken:    '%env(ALIEXPRESS_ACCESS_TOKEN)%'
             $baseUrl:        '%env(string:ALIEXPRESS_BASE_URL)%'
             $timeout:        '%env(int:ALIEXPRESS_TIMEOUT)%'
             $targetCurrency: '%env(string:ALIEXPRESS_TARGET_CURRENCY)%'
@@ -92,6 +91,20 @@ services:
 
     Cagrille\AliExpressBundle\Contract\AliExpressApiClientInterface:
         alias: Cagrille\AliExpressBundle\Api\AliExpressApiClient
+
+    Cagrille\AliExpressBundle\Api\TokenStorage:
+        arguments:
+            $varDir:             '%kernel.project_dir%/var'
+            $initialAccessToken: '%env(ALIEXPRESS_ACCESS_TOKEN)%'
+
+    Cagrille\AliExpressBundle\Contract\TokenStorageInterface:
+        alias: Cagrille\AliExpressBundle\Api\TokenStorage
+
+    Cagrille\AliExpressBundle\Api\TokenRefreshService:
+        arguments:
+            $appKey:    '%env(ALIEXPRESS_APP_KEY)%'
+            $appSecret: '%env(ALIEXPRESS_APP_SECRET)%'
+            $baseUrl:   '%env(string:ALIEXPRESS_BASE_URL)%'
 
     Cagrille\AliExpressBundle\Api\Endpoint\ProductEndpoint:
         arguments:

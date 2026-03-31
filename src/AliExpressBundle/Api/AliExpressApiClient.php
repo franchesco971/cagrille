@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cagrille\AliExpressBundle\Api;
 
 use Cagrille\AliExpressBundle\Contract\AliExpressApiClientInterface;
+use Cagrille\AliExpressBundle\Contract\TokenStorageInterface;
 use Cagrille\AliExpressBundle\Exception\AliExpressApiException;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
@@ -29,15 +30,16 @@ class AliExpressApiClient implements AliExpressApiClientInterface
     private readonly Client $httpClient;
 
     public function __construct(
-        private readonly string          $appKey,
-        private readonly string          $appSecret,
-        private readonly string          $accessToken,
-        private readonly string          $baseUrl,
-        private readonly int             $timeout,
-        private readonly string          $targetCurrency,
-        private readonly string          $targetLanguage,
-        private readonly string          $shipToCountry,
-        private readonly LoggerInterface $logger,
+        private readonly string                $appKey,
+        private readonly string                $appSecret,
+        private readonly TokenStorageInterface $tokenStorage,
+        private readonly TokenRefreshService   $tokenRefreshService,
+        private readonly string                $baseUrl,
+        private readonly int                   $timeout,
+        private readonly string                $targetCurrency,
+        private readonly string                $targetLanguage,
+        private readonly string                $shipToCountry,
+        private readonly LoggerInterface       $logger,
     ) {
         $this->httpClient = new Client([
             'base_uri' => rtrim($this->baseUrl, '/'),
@@ -53,10 +55,21 @@ class AliExpressApiClient implements AliExpressApiClientInterface
      */
     public function call(string $method, array $params = []): array
     {
+        // Auto-refresh si le token expire dans moins de 5 minutes
+        if ($this->tokenStorage->isExpiringSoon()) {
+            try {
+                $this->tokenRefreshService->refresh();
+            } catch (\Throwable $e) {
+                $this->logger->warning('[AliExpress] Échec auto-refresh token : {message}', [
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        }
+
         $commonParams = [
             'app_key'      => $this->appKey,
             'method'       => $method,
-            'session'      => $this->accessToken,
+            'session'      => $this->tokenStorage->getAccessToken(),
             'timestamp'    => date('Y-m-d H:i:s'),
             'format'       => 'json',
             'v'            => self::API_VERSION,
