@@ -6,53 +6,33 @@ namespace Cagrille\AliExpressBundle\IopSdk;
 
 class IopRequest
 {
-	// public $apiName;
+	/** @var string[] */
+	public array $headerParams = array();
 
-	public $headerParams = array();
+	/** @var string[] */
+	public array $udfParams = array();
 
-	public $udfParams = array();
+	/** @var array<string, array{name: string, type: string, content: string}> */
+	public array $fileParams = [];
 
-	public $fileParams = array();
+    public string $simplify = 'false';
 
-	// public $httpMethod = 'POST';
-
-    public $simplify = 'false';
-
-    public $format = 'json';//支持TOP的xml
-
-
+    public string $format = 'json';//支持TOP的xml
 
 	public function __construct(public string $apiName, public string $httpMethod = 'POST')
 	{
-		// $this->apiName = $apiName;
-		// $this->httpMethod = $httpMethod;
-
 		if($this->startWith($apiName,"//"))
 		{
 			throw new \Exception("api name is invalid. It should be start with /");
 		}
 	}
 
-
-	function addApiParam($key,$value)
+	public function addApiParam(string $key,string $value):void
 	{
-
-		if(!is_string($key))
-		{
-			throw new \Exception("api param key should be string");
-		}
-
-		if(is_object($value))
-		{
-			$this->udfParams[$key] = json_decode($value);
-		}
-		else
-		{
-			$this->udfParams[$key] = $value;
-		}
+		$this->udfParams[$key] = $value;
 	}
 
-	function addFileParam($key,$content,$mimeType = 'application/octet-stream')
+	public function addFileParam(?string $key, string $content, string $mimeType = 'application/octet-stream'):void
 	{
 		if(!is_string($key))
 		{
@@ -67,7 +47,7 @@ class IopRequest
 		$this->fileParams[$key] = $file;
 	}
 
-	function addHttpHeaderParam($key,$value)
+	public function addHttpHeaderParam(?string $key,?string $value): void
 	{
 		if(!is_string($key))
 		{
@@ -82,9 +62,7 @@ class IopRequest
 		$this->headerParams[$key] = $value;
 	}
 
-	function startWith($str, $needle) {
+	private function startWith(string $str, string $needle): bool {
 	    return strpos($str, $needle) === 0;
 	}
 }
-
-?>

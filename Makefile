@@ -1,4 +1,4 @@
-.PHONY: run init-cagrille php-shell
+.PHONY: run init-cagrille php-shell stan
 
 DOCKER_COMPOSE ?= docker compose
 # Avoid using root (0:0) as DOCKER_USER, especially in WSL2 environments
@@ -54,6 +54,9 @@ node-shell:
 
 node-watch:
 	@ENV=$(ENV) DOCKER_USER=$(DOCKER_USER) $(DOCKER_COMPOSE) run --rm -i nodejs "npm run watch"
+
+stan: ## Lancer PHPStan (niveau 9) sur tout le projet
+	@ENV=$(ENV) DOCKER_USER=$(DOCKER_USER) $(DOCKER_COMPOSE) exec php vendor/bin/phpstan analyse --memory-limit=512M
 
 docker-compose-check:
 	@$(DOCKER_COMPOSE) version >/dev/null 2>&1 || (echo "Please install docker compose binary or set DOCKER_COMPOSE=\"docker-compose\" for legacy binary" && exit 1)

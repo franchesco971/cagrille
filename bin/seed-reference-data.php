@@ -22,6 +22,7 @@ $stats = [
     'zones'         => ['inserted' => 0, 'skipped' => 0],
     'tax_category'  => ['inserted' => 0, 'skipped' => 0],
     'tax_rate'      => ['inserted' => 0, 'skipped' => 0],
+    'shipping_cat'  => ['inserted' => 0, 'skipped' => 0],
     'shipping'      => ['inserted' => 0, 'skipped' => 0],
     'taxons'        => ['inserted' => 0, 'skipped' => 0],
     'channel'       => ['inserted' => 0, 'skipped' => 0],
@@ -290,6 +291,17 @@ insert_pivot($pdo, 'sylius_channel_locales',    'channel_id', $channelId, 'local
 insert_pivot($pdo, 'sylius_channel_currencies', 'channel_id', $channelId, 'currency_id', $eurCurrencyId);
 insert_pivot($pdo, 'sylius_channel_countries',  'channel_id', $channelId, 'country_id',  $frCountryId);
 
+// ──── SHIPPING CATEGORY ─────────────────────────────────────────────────────
+echo "  → Catégorie de livraison...\n";
+$created = false;
+$shippingCategoryId = find_or_create(
+    $pdo, 'sylius_shipping_category', 'code', 'default',
+    "INSERT INTO sylius_shipping_category (code, name, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+    ['default', 'Default', null, $now, $now],
+    $created
+);
+$created ? $stats['shipping_cat']['inserted']++ : $stats['shipping_cat']['skipped']++;
+
 // ──── SHIPPING METHOD ─────────────────────────────────────────────────────────
 echo "  → Méthode de livraison...\n";
 
@@ -302,7 +314,7 @@ $shippingMethodId = find_or_create(
          (code, zone_id, category_id, tax_category_id, calculator, configuration,
           category_requirement, is_enabled, position, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?)",
-    ['default', $eeaZoneId, $taxCategoryId, $taxCategoryId, 'per_unit_rate', $shippingConfig, 2, $now, $now],
+    ['default', $eeaZoneId, $shippingCategoryId, $taxCategoryId, 'per_unit_rate', $shippingConfig, 2, $now, $now],
     $shippingCreated
 );
 $shippingCreated ? $stats['shipping']['inserted']++ : $stats['shipping']['skipped']++;

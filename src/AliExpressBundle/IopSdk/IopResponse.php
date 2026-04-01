@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Cagrille\AliExpressBundle\Iop;
+namespace Cagrille\AliExpressBundle\IopSdk;
 
 /**
  * Encapsule la réponse brute de l'API AliExpress IOP.

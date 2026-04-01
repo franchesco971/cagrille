@@ -4,35 +4,34 @@ declare(strict_types=1);
 
 namespace Cagrille\AliExpressBundle\IopSdk;
 
-use Cagrille\AliExpressBundle\Iop\IopResponse;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 class IopClient
 {
-	// public $appkey;
+	public string $gatewayUrl = '';
 
-	// public $secretKey;
+	public ?int $connectTimeout = null;
 
-	public $gatewayUrl;
+	public ?int $readTimeout = null;
 
-	public $connectTimeout;
+	protected string $signMethod = 'sha256';
 
-	public $readTimeout;
+	/** @var non-empty-string */
+	protected string $sdkVersion = 'iop-sdk-php-20220608';
 
-	protected $signMethod = "sha256";
+	public string $logLevel = '';
 
-	protected $sdkVersion = "iop-sdk-php-20220608";
-
-	public $logLevel;
-
-	public function getAppkey()
+	public function getAppkey(): string
 	{
 		return $this->appkey;
 	}
 
+	/**
+	 * @throws \Exception
+	 */
 	public function __construct(
-		private readonly string $url = "", 
+		string $url = "",
 		private readonly string $appkey = "", 
 		private readonly string $secretKey = "",
 		private readonly LoggerInterface $logger = new NullLogger(),
@@ -40,7 +39,7 @@ class IopClient
 	{
 		$length = strlen($url);
 	    if($length == 0)
-	    {    
+	    {
 			throw new \Exception("url is empty",0);
 		}
 		$this->gatewayUrl = $url;
@@ -49,7 +48,7 @@ class IopClient
 		$this->logLevel = Constants::$log_level_error;
 	}
 
-    protected function generateSign($apiName,$params)
+    protected function generateSign(string $apiName, array $params): string
     {
         ksort($params);
 
@@ -67,11 +66,16 @@ class IopClient
     }
 
 
-	function hmac_sha256($data, $key){
+	private function hmac_sha256(string $data, string $key): string {
 	    return hash_hmac('sha256', $data, $key);
 	}
 
-	public function curl_get($url,$apiFields = null,$headerFields = null)
+	/**
+	 * @param array<string, string> $apiFields
+	 * @param array<string, string>|null $headerFields
+	 * @throws \Exception
+	 */
+	public function curl_get(string $url, array $apiFields = [], ?array $headerFields = null): string
 	{
 		$ch = curl_init();
 
@@ -80,11 +84,12 @@ class IopClient
 			$url .= "&" ."$key=" . urlencode($value);
 		}
 
+	    assert($url !== '');
 	    curl_setopt($ch, CURLOPT_URL, $url);
 	    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_FAILONERROR, false);
 	    curl_setopt($ch, CURLOPT_HEADER, false);
-	    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+	    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 
 	    if($headerFields)
 	    {
@@ -97,12 +102,12 @@ class IopClient
 			unset($headers);
 	    }
 
-		if ($this->readTimeout) 
+		if ($this->readTimeout)
 		{
 			curl_setopt($ch, CURLOPT_TIMEOUT, $this->readTimeout);
 		}
 
-		if ($this->connectTimeout) 
+		if ($this->connectTimeout)
 		{
 			curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->connectTimeout);
 		}
@@ -113,7 +118,7 @@ class IopClient
 		if(strlen($url) > 5 && strtolower(substr($url,0,5)) == "https" ) 
 		{
 			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 		}
 
 	    $output = curl_exec($ch);
@@ -135,12 +140,20 @@ class IopClient
 			}
 		}
 
+		assert(is_string($output));
 		return $output;
 	}
 
-	public function curl_post($url, $postFields = null, $fileFields = null,$headerFields = null)
+	/**
+	 * @param array<string, string>|null $postFields
+	 * @param array<string, array{name: string, type: string, content: string}>|null $fileFields
+	 * @param array<string, string>|null $headerFields
+	 * @throws \Exception
+	 */
+	public function curl_post(string $url, ?array $postFields = null, ?array $fileFields = null, ?array $headerFields = null): string
 	{
 		$ch = curl_init();
+		assert($url !== '');
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_FAILONERROR, false);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -172,7 +185,7 @@ class IopClient
 		if(strlen($url) > 5 && strtolower(substr($url,0,5)) == "https" ) 
 		{
 			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 		}
 
 		$delimiter = '-------------' . uniqid();
@@ -209,7 +222,7 @@ class IopClient
 			)
 		);
 
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
 
 		$response = curl_exec($ch);
@@ -227,21 +240,21 @@ class IopClient
 			curl_close($ch);
 			if (200 !== $httpStatusCode)
 			{
-				throw new \Exception($response,$httpStatusCode);
+				throw new \Exception(is_string($response) ? $response : '', $httpStatusCode);
 			}
 		}
 
+		assert(is_string($response));
 		return $response;
 	}
 
-	public function execute(IopRequest $request, $accessToken = null): IopResponse
+	public function execute(IopRequest $request, ?string $accessToken = null): IopResponse
 	{
 		$sysParams["app_key"] = $this->appkey;
 		$sysParams["sign_method"] = $this->signMethod;
 		$sysParams["timestamp"] = $this->msectime();
         $sysParams["method"]=$request->apiName;
 
-		\var_dump($request->apiName, $sysParams["method"]); // DEBUG
         $sysParams["partner_id"] = $this->sdkVersion;
         $sysParams["simplify"] = $request->simplify;
         $sysParams["format"] = $request->format;
@@ -278,8 +291,6 @@ class IopClient
 		
 		$resp = '';
 
-		\var_dump($request->httpMethod); // DEBUG)
-
 		try
 		{
 			if($request->httpMethod == 'POST')
@@ -293,7 +304,6 @@ class IopClient
 		}
 		catch (\Exception $e)
 		{
-			// $this->logApiError($requestUrl,"HTTP_ERROR_" . $e->getCode(),$e->getMessage());
 			$this->logger->debug('[AliExpress IOP] HTTP_ERROR_', [
 				'api'       => $requestUrl,
 				'code' => $e->getCode(),
@@ -302,70 +312,39 @@ class IopClient
 			throw $e;
 		}
 
-		\var_dump($requestUrl, $apiParams, $resp); // DEBUG
-
 		unset($apiParams);
 
-		$respObject = json_decode($resp);
+		$decoded = json_decode($resp, true);
+		/** @var array<string, mixed> $respObject */
+		$respObject = is_array($decoded) ? $decoded : [];
 
-		\var_dump($respObject); // DEBUG
-		exit;
-
-		if(isset($respObject->code) && $respObject->code != "0") 
-		{
-			// $this->logApiError($requestUrl, $respObject->code, $respObject->message);
+		if (isset($respObject['code']) && $respObject['code'] !== '0') {
 			$this->logger->debug('[AliExpress IOP] HTTP_ERROR_', [
-				'api'       => $requestUrl,
-				'code' => $respObject->code,
-				'message' => $respObject->message,
+				'api'     => $requestUrl,
+				'code'    => $respObject['code'],
+				'message' => $respObject['message'] ?? '',
 			]);
-		} else
-		{
-			if($this->logLevel == Constants::$log_level_debug || $this->logLevel == Constants::$log_level_info) 
-			{
-				// $this->logApiError($requestUrl, '', '');
-				$this->logger->debug('[AliExpress IOP] HTTP_ERROR_', [
-					'api'       => $requestUrl,
-					'code' => '',
-					'message' => '',
-				]);
-			}
+		} elseif ($this->logLevel === Constants::$log_level_debug || $this->logLevel === Constants::$log_level_info) {
+			$this->logger->debug('[AliExpress IOP] Success', [
+				'api' => $requestUrl,
+			]);
 		}
-		// return $resp;
+
 		return new IopResponse($respObject, $resp);
 	}
 
-	protected function logApiError($requestUrl, $errorCode, $responseTxt)
-	{
-		$localIp = isset($_SERVER["SERVER_ADDR"]) ? $_SERVER["SERVER_ADDR"] : "CLI";
-		$logger = new IopLogger;
-		$logger->conf["log_file"] = rtrim('/var/', '\\/') . '/' . "logs/iopsdk.log." . date("Y-m-d");
-		$logger->conf["separator"] = "^_^";
-		$logData = array(
-		date("Y-m-d H:i:s"),
-		$this->appkey,
-		$localIp,
-		PHP_OS,
-		$this->sdkVersion,
-		$requestUrl,
-		$errorCode,
-		str_replace("\n","",$responseTxt)
-		);
-		$logger->log($logData);
-	}
-
-	function msectime() {
+	private function msectime():string {
 	   list($msec, $sec) = explode(' ', microtime());
 	   return $sec . '000';
 	}
 
-	 function endWith($haystack, $needle) {   
-	    $length = strlen($needle);
-	    if($length == 0)
-	    {    
-	        return false;  
-	    }
-	    return (substr($haystack, -$length) === $needle);
-	 }
+	private function endWith(string $haystack, string $needle): bool {
+		$length = strlen($needle);
+		if($length == 0)
+		{
+			return false;
+		}
+		return substr($haystack, -$length) === $needle;
+	}
 
 }

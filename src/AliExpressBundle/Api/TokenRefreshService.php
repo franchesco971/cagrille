@@ -7,9 +7,7 @@ namespace Cagrille\AliExpressBundle\Api;
 use Cagrille\AliExpressBundle\Contract\TokenStorageInterface;
 use Cagrille\AliExpressBundle\Exception\AliExpressApiException;
 use Cagrille\AliExpressBundle\IopSdk\IopClient;
-// use Cagrille\AliExpressBundle\Iop\IopClientImpl;
 use Cagrille\AliExpressBundle\IopSdk\IopRequest;
-// use Cagrille\AliExpressBundle\Iop\IopRequest;
 use Psr\Log\LoggerInterface;
 
 /**
