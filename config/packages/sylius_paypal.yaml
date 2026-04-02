@@ -1,2 +1,5 @@
 imports:
     - { resource: "@SyliusPayPalPlugin/config/config.yaml" }
+
+sylius_paypal:
+    sandbox: true

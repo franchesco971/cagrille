@@ -122,7 +122,7 @@ class SyliusProductPersistence implements ProductPersistenceInterface
             return null;
         }
 
-        $plain = strip_tags($dto->description);
+        $plain = html_entity_decode(strip_tags($dto->description), ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
         return preg_replace('/\s+/', ' ', trim($plain)) ?: null;
     }
