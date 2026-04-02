@@ -71,7 +71,10 @@ $zones = [
 foreach ($zones as $code => $zone) {
     $created = false;
     $zoneId  = find_or_create(
-        $pdo, 'sylius_zone', 'code', $code,
+        $pdo,
+        'sylius_zone',
+        'code',
+        $code,
         "INSERT INTO sylius_zone (code, name, type, scope, priority) VALUES (?, ?, ?, ?, ?)",
         [$code, $zone['name'], $zone['type'], $zone['scope'], $zone['priority']],
         $created
@@ -98,7 +101,10 @@ $eeaZoneId = fetch_id($pdo, 'sylius_zone', 'code', 'EEA');
 echo "  → Catégories de taxe...\n";
 $created = false;
 $taxCategoryId = find_or_create(
-    $pdo, 'sylius_tax_category', 'code', 'all',
+    $pdo,
+    'sylius_tax_category',
+    'code',
+    'all',
     "INSERT INTO sylius_tax_category (code, name, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
     ['all', 'Tous produits', 'Tous produits', $now, $now],
     $created
@@ -109,7 +115,10 @@ $created ? $stats['tax_category']['inserted']++ : $stats['tax_category']['skippe
 echo "  → Taux de taxe...\n";
 $created = false;
 find_or_create(
-    $pdo, 'sylius_tax_rate', 'code', 'tax20',
+    $pdo,
+    'sylius_tax_rate',
+    'code',
+    'tax20',
     "INSERT INTO sylius_tax_rate
          (code, name, zone_id, category_id, amount, included_in_price, calculator, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -141,8 +150,12 @@ $taxonSql = "INSERT INTO sylius_taxon
 // Racine
 $rootCreated = false;
 $rootId = find_or_create(
-    $pdo, 'sylius_taxon', 'code', 'MENU_CATEGORY',
-    $taxonSql, [null, null, 'MENU_CATEGORY', 1, 22, 0, 0, 1, $now, $now],
+    $pdo,
+    'sylius_taxon',
+    'code',
+    'MENU_CATEGORY',
+    $taxonSql,
+    [null, null, 'MENU_CATEGORY', 1, 22, 0, 0, 1, $now, $now],
     $rootCreated
 );
 if ($rootCreated) {
@@ -177,14 +190,22 @@ foreach ($taxonsData as &$tData) {
     }
     $created = false;
     $id = find_or_create(
-        $pdo, 'sylius_taxon', 'code', $tCode,
-        $taxonSql, [$rootId, $tParent, $tCode, $tLeft, $tRight, $tLevel, $tPos, 1, $now, $now],
+        $pdo,
+        'sylius_taxon',
+        'code',
+        $tCode,
+        $taxonSql,
+        [$rootId, $tParent, $tCode, $tLeft, $tRight, $tLevel, $tPos, 1, $now, $now],
         $created
     );
     $created ? $stats['taxons']['inserted']++ : $stats['taxons']['skipped']++;
     $tData[6] = $id;
-    if ($tCode === 'Barbecues')   { $bbqId = $id; }
-    if ($tCode === 'accessories') { $accId = $id; }
+    if ($tCode === 'Barbecues') {
+        $bbqId = $id;
+    }
+    if ($tCode === 'accessories') {
+        $accId = $id;
+    }
 }
 unset($tData);
 
@@ -235,10 +256,10 @@ foreach ($translationsMap as $tCode => $localeMap) {
 echo "  → Channel CG_EURO_STORE...\n";
 
 $channelCode   = 'CG_EURO_STORE';
-$frLocaleId    = fetch_id($pdo, 'sylius_locale',   'code', 'fr_FR');
-$enLocaleId    = fetch_id($pdo, 'sylius_locale',   'code', 'en_US');
+$frLocaleId    = fetch_id($pdo, 'sylius_locale', 'code', 'fr_FR');
+$enLocaleId    = fetch_id($pdo, 'sylius_locale', 'code', 'en_US');
 $eurCurrencyId = fetch_id($pdo, 'sylius_currency', 'code', 'EUR');
-$frCountryId   = fetch_id($pdo, 'sylius_country',  'code', 'FR');
+$frCountryId   = fetch_id($pdo, 'sylius_country', 'code', 'FR');
 
 $stmtCh = $pdo->prepare(
     "SELECT id, shop_billing_data_id, channel_price_history_config_id FROM sylius_channel WHERE code = ? LIMIT 1"
@@ -288,16 +309,19 @@ if ($existingChannel !== false) {
 }
 
 // Relations pivot (INSERT IGNORE = idempotent sur clé composite)
-insert_pivot($pdo, 'sylius_channel_locales',    'channel_id', $channelId, 'locale_id',   $frLocaleId);
-insert_pivot($pdo, 'sylius_channel_locales',    'channel_id', $channelId, 'locale_id',   $enLocaleId);
+insert_pivot($pdo, 'sylius_channel_locales', 'channel_id', $channelId, 'locale_id', $frLocaleId);
+insert_pivot($pdo, 'sylius_channel_locales', 'channel_id', $channelId, 'locale_id', $enLocaleId);
 insert_pivot($pdo, 'sylius_channel_currencies', 'channel_id', $channelId, 'currency_id', $eurCurrencyId);
-insert_pivot($pdo, 'sylius_channel_countries',  'channel_id', $channelId, 'country_id',  $frCountryId);
+insert_pivot($pdo, 'sylius_channel_countries', 'channel_id', $channelId, 'country_id', $frCountryId);
 
 // ──── SHIPPING CATEGORY ─────────────────────────────────────────────────────
 echo "  → Catégorie de livraison...\n";
 $created = false;
 $shippingCategoryId = find_or_create(
-    $pdo, 'sylius_shipping_category', 'code', 'default',
+    $pdo,
+    'sylius_shipping_category',
+    'code',
+    'default',
     "INSERT INTO sylius_shipping_category (code, name, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
     ['default', 'Default', null, $now, $now],
     $created
@@ -311,7 +335,10 @@ $shippingConfig = (string) json_encode([$channelCode => ['amount' => 0]]);
 
 $shippingCreated  = false;
 $shippingMethodId = find_or_create(
-    $pdo, 'sylius_shipping_method', 'code', 'default',
+    $pdo,
+    'sylius_shipping_method',
+    'code',
+    'default',
     "INSERT INTO sylius_shipping_method
          (code, zone_id, category_id, tax_category_id, calculator, configuration,
           category_requirement, is_enabled, position, created_at, updated_at)
@@ -340,9 +367,9 @@ echo "  → Gateway config (PayPal)...\n";
 
 // Les credentials sont lus depuis les variables d'environnement.
 // Définissez-les dans .env.local avant de lancer le script.
-$ppClientId     = (string) (getenv('PAYPAL_CLIENT_ID')     ?: '');
+$ppClientId     = (string) (getenv('PAYPAL_CLIENT_ID') ?: '');
 $ppClientSecret = (string) (getenv('PAYPAL_CLIENT_SECRET') ?: '');
-$ppMerchantId   = (string) (getenv('PAYPAL_MERCHANT_ID')   ?: '');
+$ppMerchantId   = (string) (getenv('PAYPAL_MERCHANT_ID') ?: '');
 $ppSyliusMerchantId = (string) (getenv('PAYPAL_SYLIUS_MERCHANT_ID') ?: '');
 
 $gatewayConfig = json_encode([
@@ -358,7 +385,10 @@ $gatewayConfig = json_encode([
 
 $gatewayCreated = false;
 $gatewayConfigId = find_or_create(
-    $pdo, 'sylius_gateway_config', 'gateway_name', 'paypal_express_checkout',
+    $pdo,
+    'sylius_gateway_config',
+    'gateway_name',
+    'paypal_express_checkout',
     "INSERT INTO sylius_gateway_config (gateway_name, factory_name, config, use_payum) VALUES (?, ?, ?, 1)",
     ['paypal_express_checkout', 'sylius_paypal', (string) $gatewayConfig],
     $gatewayCreated
@@ -372,7 +402,10 @@ $appEnvEnv = $_ENV['APP_ENV'] ?? null;
 $appEnvForPayment = is_string($appEnvEnv) ? $appEnvEnv : (getenv('APP_ENV') ?: 'prod');
 $paymentCreated = false;
 $paymentMethodId = find_or_create(
-    $pdo, 'sylius_payment_method', 'code', 'paypal',
+    $pdo,
+    'sylius_payment_method',
+    'code',
+    'paypal',
     "INSERT INTO sylius_payment_method
          (gateway_config_id, code, environment, is_enabled, position, created_at, updated_at)
      VALUES (?, 'paypal', ?, 1, 1, ?, ?)",

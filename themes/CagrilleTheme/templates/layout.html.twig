@@ -9,8 +9,9 @@
     {# Tailwind CSS compilé #}
     <link rel="stylesheet" href="{{ asset('build/app.css') }}">
 
-    {# Icône unicode feu comme favicon inline #}
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>">
+    {# Favicon flamme vectoriel (SVG) + fallback ICO pour anciens navigateurs #}
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+    <link rel="alternate icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
 
     {% block stylesheets %}{% endblock %}
 </head>
