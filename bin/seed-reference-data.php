@@ -26,6 +26,8 @@ $stats = [
     'shipping'      => ['inserted' => 0, 'skipped' => 0],
     'taxons'        => ['inserted' => 0, 'skipped' => 0],
     'channel'       => ['inserted' => 0, 'skipped' => 0],
+    'gateway'       => ['inserted' => 0, 'skipped' => 0],
+    'payment'       => ['inserted' => 0, 'skipped' => 0],
 ];
 
 $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
@@ -332,6 +334,68 @@ foreach (['fr_FR' => 'defaut', 'en_US' => 'default'] as $locale => $name) {
 }
 
 insert_pivot($pdo, 'sylius_shipping_method_channels', 'shipping_method_id', $shippingMethodId, 'channel_id', $channelId);
+
+// ──── GATEWAY CONFIG (PayPal) ────────────────────────────────────────────────
+echo "  → Gateway config (PayPal)...\n";
+
+// Les credentials sont lus depuis les variables d'environnement.
+// Définissez-les dans .env.local avant de lancer le script.
+$ppClientId     = (string) (getenv('PAYPAL_CLIENT_ID')     ?: '');
+$ppClientSecret = (string) (getenv('PAYPAL_CLIENT_SECRET') ?: '');
+$ppMerchantId   = (string) (getenv('PAYPAL_MERCHANT_ID')   ?: '');
+$ppSyliusMerchantId = (string) (getenv('PAYPAL_SYLIUS_MERCHANT_ID') ?: '');
+
+$gatewayConfig = json_encode([
+    'client_id'            => $ppClientId,
+    'client_secret'        => $ppClientSecret,
+    'merchant_id'          => $ppMerchantId,
+    'use_authorize'        => '1',
+    'sylius_merchant_id'   => $ppSyliusMerchantId,
+    'reports_sftp_password' => null,
+    'reports_sftp_username' => null,
+    'partner_attribution_id' => 'Sylius_MP_PPCP',
+]);
+
+$gatewayCreated = false;
+$gatewayConfigId = find_or_create(
+    $pdo, 'sylius_gateway_config', 'gateway_name', 'paypal_express_checkout',
+    "INSERT INTO sylius_gateway_config (gateway_name, factory_name, config, use_payum) VALUES (?, ?, ?, 1)",
+    ['paypal_express_checkout', 'sylius_paypal', (string) $gatewayConfig],
+    $gatewayCreated
+);
+$gatewayCreated ? $stats['gateway']['inserted']++ : $stats['gateway']['skipped']++;
+
+// ──── PAYMENT METHOD (PayPal) ──────────────────────────────────────────────
+echo "  → Méthode de paiement (PayPal)...\n";
+
+$appEnvEnv = $_ENV['APP_ENV'] ?? null;
+$appEnvForPayment = is_string($appEnvEnv) ? $appEnvEnv : (getenv('APP_ENV') ?: 'prod');
+$paymentCreated = false;
+$paymentMethodId = find_or_create(
+    $pdo, 'sylius_payment_method', 'code', 'paypal',
+    "INSERT INTO sylius_payment_method
+         (gateway_config_id, code, environment, is_enabled, position, created_at, updated_at)
+     VALUES (?, 'paypal', ?, 1, 1, ?, ?)",
+    [$gatewayConfigId, $appEnvForPayment, $now, $now],
+    $paymentCreated
+);
+$paymentCreated ? $stats['payment']['inserted']++ : $stats['payment']['skipped']++;
+
+// Traductions fr_FR + en_US
+foreach (['fr_FR' => 'Paypal', 'en_US' => 'Paypal'] as $locale => $name) {
+    $exists = $pdo->prepare(
+        "SELECT 1 FROM sylius_payment_method_translation WHERE translatable_id = ? AND locale = ? LIMIT 1"
+    );
+    $exists->execute([$paymentMethodId, $locale]);
+    if (!$exists->fetch()) {
+        $pdo->prepare(
+            "INSERT INTO sylius_payment_method_translation (translatable_id, name, description, instructions, locale)
+             VALUES (?, ?, NULL, NULL, ?)"
+        )->execute([$paymentMethodId, $name, $locale]);
+    }
+}
+
+insert_pivot($pdo, 'sylius_payment_method_channels', 'payment_method_id', $paymentMethodId, 'channel_id', $channelId);
 
 $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
 
