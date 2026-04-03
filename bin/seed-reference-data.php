@@ -14,21 +14,12 @@ require __DIR__ . '/_init_helpers.php';
 $pdo = createPdo();
 $now = date('Y-m-d H:i:s');
 
-/** @var array<string, array{inserted: int, skipped: int}> */
-$stats = [
-    'currencies'    => ['inserted' => 0, 'skipped' => 0],
-    'locales'       => ['inserted' => 0, 'skipped' => 0],
-    'countries'     => ['inserted' => 0, 'skipped' => 0],
-    'zones'         => ['inserted' => 0, 'skipped' => 0],
-    'tax_category'  => ['inserted' => 0, 'skipped' => 0],
-    'tax_rate'      => ['inserted' => 0, 'skipped' => 0],
-    'shipping_cat'  => ['inserted' => 0, 'skipped' => 0],
-    'shipping'      => ['inserted' => 0, 'skipped' => 0],
-    'taxons'        => ['inserted' => 0, 'skipped' => 0],
-    'channel'       => ['inserted' => 0, 'skipped' => 0],
-    'gateway'       => ['inserted' => 0, 'skipped' => 0],
-    'payment'       => ['inserted' => 0, 'skipped' => 0],
-];
+/** @var array<string, array{inserted: int, skipped: int}> $stats */
+$stats = array_fill_keys(
+    ['currencies', 'locales', 'countries', 'zones', 'tax_category', 'tax_rate',
+     'shipping_cat', 'shipping', 'taxons', 'channel', 'gateway', 'payment'],
+    ['inserted' => 0, 'skipped' => 0]
+);
 
 $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
 
