@@ -14,7 +14,7 @@ require __DIR__ . '/_init_helpers.php';
 $pdo = createPdo();
 $now = date('Y-m-d H:i:s');
 
-/** @var array<string, array{inserted: int, skipped: int}> $stats */
+/** @var non-empty-array<string, non-empty-array{inserted: int, skipped: int}> $stats */
 $stats = array_fill_keys(
     ['currencies', 'locales', 'countries', 'zones', 'tax_category', 'tax_rate',
      'shipping_cat', 'shipping', 'taxons', 'channel', 'gateway', 'payment'],
