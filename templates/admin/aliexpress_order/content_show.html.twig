@@ -1,0 +1,191 @@
+{% set order = aliexpress_order_find(app.request.attributes.getInt('id')) %}
+{% if order is null %}
+    <div class="alert alert-danger m-3">Commande AliExpress introuvable.</div>
+{% else %}
+<div class="page-wrapper">
+    <div class="page-header d-print-none">
+        <div class="container-xl">
+            <div class="row g-2 align-items-center">
+                <div class="col">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item">
+                                <a href="{{ path('sylius_admin_dashboard') }}">Administration</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a href="{{ path('cagrille_admin_aliexpress_order_index') }}">Commandes AliExpress</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">#{{ order.id }}</li>
+                        </ol>
+                    </nav>
+                    <h2 class="page-title">Commande AliExpress #{{ order.id }}</h2>
+                </div>
+                <div class="col-auto ms-auto">
+                    <a href="{{ path('cagrille_admin_aliexpress_order_index') }}" class="btn btn-outline-secondary">
+                        ← Retour
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-body">
+        <div class="container-xl">
+
+            {# Flash messages #}
+            {% include '@SyliusAdmin/shared/crud/common/content/flashes.html.twig' %}
+
+            <div class="row row-cards">
+
+                {# ── Informations générales ────────────────────────────────── #}
+                <div class="col-12 col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Informations générales</h3>
+                            <div class="card-options">
+                                <span class="badge {{ order.status.badgeClass }} text-white">
+                                    {{ order.status.label }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row">
+                                <dt class="col-5">ID interne</dt>
+                                <dd class="col-7">#{{ order.id }}</dd>
+
+                                <dt class="col-5">Commande Sylius</dt>
+                                <dd class="col-7">
+                                    <a href="{{ path('sylius_admin_order_show', {id: order.syliusOrderId}) }}" target="_blank">
+                                        #{{ order.syliusOrderId }}
+                                    </a>
+                                </dd>
+
+                                <dt class="col-5">Item Sylius</dt>
+                                <dd class="col-7">#{{ order.syliusOrderItemId }}</dd>
+
+                                <dt class="col-5">ID AliExpress</dt>
+                                <dd class="col-7">
+                                    {% if order.aliExpressOrderId %}
+                                        <code>{{ order.aliExpressOrderId }}</code>
+                                    {% else %}
+                                        <span class="text-muted">Non attribué</span>
+                                    {% endif %}
+                                </dd>
+
+                                <dt class="col-5">Produit AliExpress</dt>
+                                <dd class="col-7"><code>{{ order.aliExpressProductId }}</code></dd>
+
+                                <dt class="col-5">SKU Attr</dt>
+                                <dd class="col-7">
+                                    {% if order.skuAttr %}
+                                        <code>{{ order.skuAttr }}</code>
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </dd>
+
+                                <dt class="col-5">Quantité</dt>
+                                <dd class="col-7">{{ order.quantity }}</dd>
+
+                                <dt class="col-5">Montant</dt>
+                                <dd class="col-7">
+                                    {% if order.totalAmount > 0 %}
+                                        {{ order.totalAmount|number_format(2) }} {{ order.currency }}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </dd>
+
+                                <dt class="col-5">Tentatives</dt>
+                                <dd class="col-7">{{ order.retryCount }}</dd>
+
+                                <dt class="col-5">Créée le</dt>
+                                <dd class="col-7">{{ order.createdAt|date('d/m/Y à H:i') }}</dd>
+
+                                <dt class="col-5">Mise à jour</dt>
+                                <dd class="col-7">{{ order.updatedAt|date('d/m/Y à H:i') }}</dd>
+
+                                {% if order.placedAt %}
+                                    <dt class="col-5">Placée le</dt>
+                                    <dd class="col-7">{{ order.placedAt|date('d/m/Y à H:i') }}</dd>
+                                {% endif %}
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── Livraison & Tracking ───────────────────────────────────── #}
+                <div class="col-12 col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Livraison & Tracking</h3>
+                        </div>
+                        <div class="card-body">
+                            {% if order.trackingNumber %}
+                                <dl class="row">
+                                    <dt class="col-5">N° de suivi</dt>
+                                    <dd class="col-7"><code>{{ order.trackingNumber }}</code></dd>
+
+                                    <dt class="col-5">Transporteur</dt>
+                                    <dd class="col-7">{{ order.carrier ?? '—' }}</dd>
+
+                                    <dt class="col-5">Statut logistique</dt>
+                                    <dd class="col-7">
+                                        <code>{{ order.logisticsStatus ?? '—' }}</code>
+                                    </dd>
+                                </dl>
+                            {% else %}
+                                <p class="text-muted mb-0">
+                                    Aucune information de livraison disponible pour l'instant.
+                                    <br>
+                                    Lancez <code>bin/console aliexpress:shipment:sync</code> pour synchroniser.
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {# ── Message d'erreur ──────────────────────────────────── #}
+                    {% if order.errorMessage %}
+                        <div class="card mt-3 border-danger">
+                            <div class="card-header bg-danger-lt">
+                                <h3 class="card-title text-danger">Message d'erreur AliExpress</h3>
+                            </div>
+                            <div class="card-body">
+                                <pre class="mb-0 text-danger" style="white-space: pre-wrap; word-break: break-word;">{{ order.errorMessage }}</pre>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+            </div>
+
+            {# ── Actions ─────────────────────────────────────────────────── #}
+            {% if order.status.value == 'failed' %}
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <h4>Relancer cette commande</h4>
+                                <p class="text-muted">
+                                    La commande a échoué lors du placement sur AliExpress.
+                                    Vous pouvez la relancer manuellement ci-dessous.
+                                </p>
+                                <form method="post"
+                                      action="{{ path('cagrille_admin_aliexpress_order_retry', {id: order.id}) }}"
+                                      onsubmit="return confirm('Relancer la commande AliExpress #{{ order.id }} ?')">
+                                    <input type="hidden" name="_token"
+                                           value="{{ csrf_token('aliexpress_order_retry_' ~ order.id) }}">
+                                    <button type="submit" class="btn btn-warning">
+                                        Relancer la commande AliExpress
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endif %}

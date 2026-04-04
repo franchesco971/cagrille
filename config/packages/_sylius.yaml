@@ -316,3 +316,27 @@ sylius_twig_hooks:
             content:
                 template: 'admin/aliexpress_sync/content.html.twig'
                 priority: 0
+
+        # ── Page admin : Liste commandes AliExpress ───────────────────────────
+        'cagrille_admin.aliexpress_order.index':
+            sidebar:
+                template: '@SyliusAdmin/shared/crud/common/sidebar.html.twig'
+                priority: 200
+            navbar:
+                template: '@SyliusAdmin/shared/crud/common/navbar.html.twig'
+                priority: 100
+            content:
+                template: 'admin/aliexpress_order/content_index.html.twig'
+                priority: 0
+
+        # ── Page admin : Détail commande AliExpress ───────────────────────────
+        'cagrille_admin.aliexpress_order.show':
+            sidebar:
+                template: '@SyliusAdmin/shared/crud/common/sidebar.html.twig'
+                priority: 200
+            navbar:
+                template: '@SyliusAdmin/shared/crud/common/navbar.html.twig'
+                priority: 100
+            content:
+                template: 'admin/aliexpress_order/content_show.html.twig'
+                priority: 0

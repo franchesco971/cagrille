@@ -18,6 +18,12 @@ doctrine:
                 dir: '%kernel.project_dir%/src/Entity'
                 prefix: 'App\Entity'
                 alias: App
+            CagrilleAliExpress:
+                is_bundle: false
+                type: attribute
+                dir: '%kernel.project_dir%/src/AliExpressBundle/Entity'
+                prefix: 'Cagrille\AliExpressBundle\Entity'
+                alias: CagrilleAliExpress
 
 when@prod: &doctrine_prod
     doctrine:

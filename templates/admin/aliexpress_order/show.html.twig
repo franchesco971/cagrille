@@ -1,0 +1,7 @@
+{% extends '@SyliusAdmin/shared/layout/base.html.twig' %}
+
+{% block title %}Commande AliExpress #{{ order.id }} — Admin{% endblock %}
+
+{% block body %}
+    {% hook 'cagrille_admin.aliexpress_order.show' %}
+{% endblock %}

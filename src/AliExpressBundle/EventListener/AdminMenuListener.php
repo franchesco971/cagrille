@@ -31,5 +31,11 @@ final class AdminMenuListener
             ->setLabel('Sync AliExpress')
             ->setLabelAttribute('icon', 'tabler:refresh')
         ;
+
+        $catalog
+            ->addChild('aliexpress_orders', ['route' => 'cagrille_admin_aliexpress_order_index'])
+            ->setLabel('Commandes AliExpress')
+            ->setLabelAttribute('icon', 'tabler:shopping-cart')
+        ;
     }
 }

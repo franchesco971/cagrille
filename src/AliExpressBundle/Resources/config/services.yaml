@@ -53,3 +53,36 @@ services:
     # ── Commandes CLI (autoconfigure = true les enregistre automatiquement) ───
     Cagrille\AliExpressBundle\Command\SyncProductsCommand: ~
     Cagrille\AliExpressBundle\Command\TrackOrderCommand: ~
+    Cagrille\AliExpressBundle\Command\RetryFailedOrdersCommand: ~
+    Cagrille\AliExpressBundle\Command\SyncShipmentsCommand: ~
+
+    # ── Repository commandes AliExpress ───────────────────────────────────────
+    Cagrille\AliExpressBundle\Repository\AliExpressOrderRepository: ~
+
+    Cagrille\AliExpressBundle\Contract\AliExpressOrderRepositoryInterface:
+        alias: Cagrille\AliExpressBundle\Repository\AliExpressOrderRepository
+
+    # ── Service de placement des commandes AliExpress ─────────────────────────
+    Cagrille\AliExpressBundle\Service\AliExpressOrderPlacementService: ~
+
+    Cagrille\AliExpressBundle\Contract\AliExpressOrderPlacementServiceInterface:
+        alias: Cagrille\AliExpressBundle\Service\AliExpressOrderPlacementService
+
+    # ── Service de synchronisation livraison AliExpress → Sylius ─────────────
+    Cagrille\AliExpressBundle\Service\AliExpressShipmentSyncService:
+        arguments:
+            $orderRepository: '@sylius.repository.order'
+
+    Cagrille\AliExpressBundle\Contract\AliExpressShipmentSyncServiceInterface:
+        alias: Cagrille\AliExpressBundle\Service\AliExpressShipmentSyncService
+
+    # ── EventListener : placement commandes après paiement ────────────────────
+    Cagrille\AliExpressBundle\EventListener\OrderPaymentCompletedListener:
+        tags:
+            - name: kernel.event_listener
+              event: 'workflow.sylius_order_payment.completed.pay'
+              priority: 50
+
+    # ── Contrôleurs admin ─────────────────────────────────────────────────────
+    Cagrille\AliExpressBundle\Controller\Admin\AliExpressOrderController:
+        tags: ['controller.service_arguments']
