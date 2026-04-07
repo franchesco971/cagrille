@@ -7,6 +7,7 @@ namespace Cagrille\AliExpressBundle\Service;
 use Cagrille\AliExpressBundle\Contract\AliExpressOrderPlacementServiceInterface;
 use Cagrille\AliExpressBundle\Contract\AliExpressOrderRepositoryInterface;
 use Cagrille\AliExpressBundle\Contract\OrderEndpointInterface;
+use Cagrille\AliExpressBundle\Dto\OrderItemDto;
 use Cagrille\AliExpressBundle\Dto\OrderRequestDto;
 use Cagrille\AliExpressBundle\Entity\AliExpressOrder;
 use Cagrille\AliExpressBundle\Exception\AliExpressApiException;
@@ -39,7 +40,6 @@ final class AliExpressOrderPlacementService implements AliExpressOrderPlacementS
     public function placeForOrder(OrderInterface $order): int
     {
         $orderId = $order->getId();
-        $created = 0;
 
         if ($orderId === null) {
             $this->logger->warning('[AliExpress] placeForOrder : commande sans ID ignorée.');
@@ -55,6 +55,10 @@ final class AliExpressOrderPlacementService implements AliExpressOrderPlacementS
             return 0;
         }
 
+        // Collecte tous les items AliExpress de la commande
+        /** @var array<array{aliOrder: AliExpressOrder, itemDto: OrderItemDto}> $collected */
+        $collected = [];
+
         foreach ($order->getItems() as $item) {
             $aliExpressProductId = $this->extractAliExpressProductId($item);
 
@@ -62,15 +66,49 @@ final class AliExpressOrderPlacementService implements AliExpressOrderPlacementS
                 continue;
             }
 
-            $created += $this->placeItemOrder((int) $orderId, $item, $aliExpressProductId, $address);
+            $itemId = $item->getId();
+
+            if ($itemId === null) {
+                continue;
+            }
+
+            $aliOrder = new AliExpressOrder(
+                syliusOrderId:       (int) $orderId,
+                syliusOrderItemId:   (int) $itemId,
+                aliExpressProductId: $aliExpressProductId,
+                quantity:            $item->getQuantity(),
+            );
+
+            $this->orderRepository->save($aliOrder, flush: false);
+
+            $collected[] = [
+                'aliOrder' => $aliOrder,
+                'itemDto'  => new OrderItemDto(
+                    productId: $aliExpressProductId,
+                    quantity:  $item->getQuantity(),
+                    skuAttr:   $aliOrder->getSkuAttr(),
+                ),
+            ];
         }
 
-        $this->logger->info('[AliExpress] Commande Sylius #{id} : {count} commande(s) AliExpress créée(s).', [
-            'id' => $orderId,
-            'count' => $created,
+        if ($collected === []) {
+            $this->orderRepository->flush();
+
+            return 0;
+        }
+
+        // Flush tous les AliExpressOrder en attente en une seule requête DB
+        $this->orderRepository->flush();
+
+        // Un seul appel API regroupant tous les items
+        $placed = $this->doPlaceGroupedOrder($collected, (int) $orderId, $address);
+
+        $this->logger->info('[AliExpress] Commande Sylius #{id} : {count} article(s) groupé(s) en 1 commande AliExpress.', [
+            'id'    => $orderId,
+            'count' => count($collected),
         ]);
 
-        return $created;
+        return $placed ? 1 : 0;
     }
 
     public function retry(int $aliExpressOrderId): bool

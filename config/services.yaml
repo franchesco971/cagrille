@@ -142,3 +142,10 @@ services:
     App\Controller\:
         resource: '../src/Controller'
         tags: ['controller.service_arguments']
+
+when@dev:
+    services:
+        # Remplace l'endpoint AliExpress réel par un mock en développement
+        # pour éviter les vraies commandes lors des tests.
+        Cagrille\AliExpressBundle\Contract\OrderEndpointInterface:
+            alias: Cagrille\AliExpressBundle\Api\Endpoint\MockOrderEndpoint

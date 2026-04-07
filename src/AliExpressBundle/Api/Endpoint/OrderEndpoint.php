@@ -27,12 +27,17 @@ class OrderEndpoint implements OrderEndpointInterface
 
     public function create(OrderRequestDto $request): OrderDto
     {
+        $productItems = array_map(
+            static fn (\Cagrille\AliExpressBundle\Dto\OrderItemDto $item): array => [
+                'product_id'    => $item->productId,
+                'product_count' => $item->quantity,
+                'sku_attr'      => $item->skuAttr,
+            ],
+            $request->items,
+        );
+
         $data = $this->client->call('aliexpress.ds.order.create', [
-            'product_items' => json_encode([[
-                'product_id'   => $request->productId,
-                'product_count' => $request->quantity,
-                'sku_attr'     => $request->skuAttr,
-            ]]),
+            'product_items' => json_encode($productItems),
             'logistics_service_name' => $request->logisticsService,
             'international_transport_mode' => 'AIR',
             'out_order_id'   => $request->syliusOrderId,

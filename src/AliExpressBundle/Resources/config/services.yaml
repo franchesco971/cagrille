@@ -77,12 +77,12 @@ services:
         alias: Cagrille\AliExpressBundle\Service\AliExpressShipmentSyncService
 
     # ── EventListener : placement commandes après paiement ────────────────────
-    Cagrille\AliExpressBundle\EventListener\OrderPaymentCompletedListener:
-        tags:
-            - name: kernel.event_listener
-              event: 'workflow.sylius_order_payment.completed.pay'
-              priority: 50
+    # Le tag est géré par l'attribut #[AsEventListener] sur la classe.
+    Cagrille\AliExpressBundle\EventListener\OrderPaymentCompletedListener: ~
 
     # ── Contrôleurs admin ─────────────────────────────────────────────────────
     Cagrille\AliExpressBundle\Controller\Admin\AliExpressOrderController:
         tags: ['controller.service_arguments']
+
+    # ── Mock de l'endpoint commandes (disponible pour surcharge en dev) ───────
+    Cagrille\AliExpressBundle\Api\Endpoint\MockOrderEndpoint: ~

@@ -5,16 +5,17 @@ declare(strict_types=1);
 namespace Cagrille\AliExpressBundle\Dto;
 
 /**
- * DTO de création d'une commande AliExpress DS.
- * Contient les informations nécessaires pour passer une commande dropship.
+ * DTO de création d'une commande AliExpress DS groupée.
+ * Un seul appel API peut contenir plusieurs articles (product_items).
  */
 final class OrderRequestDto
 {
+    /**
+     * @param OrderItemDto[] $items
+     */
     public function __construct(
         public readonly string $syliusOrderId,
-        public readonly string $productId,       // item_id AliExpress
-        public readonly int    $quantity,
-        public readonly string $skuAttr,         // Attributs SKU (ex: "200000182:193;200007763:201336100")
+        public readonly array  $items,           // Liste des articles à commander
         public readonly string $shippingAddress,
         public readonly string $recipientName,
         public readonly string $recipientPhone,

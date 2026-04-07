@@ -7,6 +7,7 @@ namespace Cagrille\AliExpressBundle\EventListener;
 use Cagrille\AliExpressBundle\Contract\AliExpressOrderPlacementServiceInterface;
 use Psr\Log\LoggerInterface;
 use Sylius\Component\Core\Model\OrderInterface;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Workflow\Event\CompletedEvent;
 use Webmozart\Assert\Assert;
 
@@ -17,6 +18,7 @@ use Webmozart\Assert\Assert;
  * Principe SRP : gère uniquement le branchement entre l'événement Sylius et le service.
  * Priorité 50 : s'exécute après la résolution d'état Sylius (priorité 100 et 200).
  */
+#[AsEventListener(event: 'workflow.sylius_order_payment.completed.pay', priority: 50)]
 final class OrderPaymentCompletedListener
 {
     public function __construct(
