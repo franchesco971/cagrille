@@ -41,11 +41,11 @@ class SyncProductsCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $io      = new SymfonyStyle($input, $output);
+        $io = new SymfonyStyle($input, $output);
         $io->title('Synchronisation AliExpress → Sylius');
 
         /** @var string|null $itemId */
-        $itemId  = $input->getOption('item');
+        $itemId = $input->getOption('item');
         /** @var string|null $keyword */
         $keyword = $input->getOption('keyword');
 
@@ -53,12 +53,14 @@ class SyncProductsCommand extends Command
             if ($itemId !== null) {
                 $this->syncService->importOne((string) $itemId);
                 $io->success(sprintf('Produit %s importé.', $itemId));
+
                 return Command::SUCCESS;
             }
 
             if ($keyword !== null) {
                 $count = $this->syncService->syncByKeyword((string) $keyword);
                 $io->success(sprintf('%d produits synchronisés pour "%s".', $count, $keyword));
+
                 return Command::SUCCESS;
             }
 
@@ -69,6 +71,7 @@ class SyncProductsCommand extends Command
             return Command::SUCCESS;
         } catch (\Throwable $e) {
             $io->error($e->getMessage());
+
             return Command::FAILURE;
         }
     }

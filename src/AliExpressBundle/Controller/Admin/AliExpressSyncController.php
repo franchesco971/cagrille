@@ -17,7 +17,7 @@ final class AliExpressSyncController extends AbstractController
 {
     public function __construct(
         private readonly ProductSyncServiceInterface $syncService,
-        private readonly TokenRefreshService         $tokenRefreshService,
+        private readonly TokenRefreshService $tokenRefreshService,
     ) {
     }
 
@@ -169,4 +169,3 @@ final class AliExpressSyncController extends AbstractController
         return $this->redirectToRoute('cagrille_admin_aliexpress_sync_index');
     }
 }
-

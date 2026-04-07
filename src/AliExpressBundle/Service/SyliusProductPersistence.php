@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Cagrille\AliExpressBundle\Service;
 
+use App\Entity\Product\ProductImage;
 use Cagrille\AliExpressBundle\Contract\ProductPersistenceInterface;
 use Cagrille\AliExpressBundle\Dto\ProductDto;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
-use App\Entity\Product\ProductImage;
 use Sylius\Component\Core\Model\ChannelPricingInterface;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\ProductTranslationInterface;
@@ -36,18 +36,18 @@ class SyliusProductPersistence implements ProductPersistenceInterface
      * @param ChannelRepositoryInterface<\Sylius\Component\Core\Model\ChannelInterface> $channelRepository
      */
     public function __construct(
-        private readonly ProductFactoryInterface    $productFactory,
-        private readonly FactoryInterface           $channelPricingFactory,
+        private readonly ProductFactoryInterface $productFactory,
+        private readonly FactoryInterface $channelPricingFactory,
         private readonly ChannelRepositoryInterface $channelRepository,
-        private readonly EntityManagerInterface     $entityManager,
-        private readonly ImageUploaderInterface     $imageUploader,
-        private readonly LoggerInterface            $logger,
+        private readonly EntityManagerInterface $entityManager,
+        private readonly ImageUploaderInterface $imageUploader,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
     public function upsert(ProductDto $dto): void
     {
-        $code    = 'aliexpress_' . $dto->aliExpressId;
+        $code = 'aliexpress_' . $dto->aliExpressId;
         $product = $this->findOrCreate($code, $dto);
 
         $this->entityManager->persist($product);
@@ -89,9 +89,9 @@ class SyliusProductPersistence implements ProductPersistenceInterface
 
     private function mapTranslation(ProductInterface $product, ProductDto $dto): void
     {
-        $name             = $dto->name ?: ('Produit AliExpress ' . $dto->aliExpressId);
-        $slug             = $this->buildSlug($dto);
-        $description      = $this->buildDescription($dto);
+        $name = $dto->name ?: ('Produit AliExpress ' . $dto->aliExpressId);
+        $slug = $this->buildSlug($dto);
+        $description = $this->buildDescription($dto);
         $shortDescription = $this->buildShortDescription($dto);
 
         foreach (['fr_FR', 'en_US'] as $locale) {
@@ -122,7 +122,7 @@ class SyliusProductPersistence implements ProductPersistenceInterface
             return null;
         }
 
-        $plain = html_entity_decode(strip_tags($dto->description), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $plain = html_entity_decode(strip_tags($dto->description), \ENT_QUOTES | \ENT_HTML5, 'UTF-8');
 
         return preg_replace('/\s+/', ' ', trim($plain)) ?: null;
     }
@@ -168,6 +168,7 @@ class SyliusProductPersistence implements ProductPersistenceInterface
 
             if ($tmpPath === null) {
                 $this->logger->warning('[AliExpress] Image non téléchargeable : {url}', ['url' => $url]);
+
                 continue;
             }
 
@@ -198,7 +199,7 @@ class SyliusProductPersistence implements ProductPersistenceInterface
             return null;
         }
 
-        $ext     = pathinfo((string) parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION) ?: 'jpg';
+        $ext = pathinfo((string) parse_url($url, \PHP_URL_PATH), \PATHINFO_EXTENSION) ?: 'jpg';
         $tmpPath = sys_get_temp_dir() . '/' . bin2hex(random_bytes(8)) . '.' . $ext;
 
         file_put_contents($tmpPath, $content);
@@ -223,7 +224,7 @@ class SyliusProductPersistence implements ProductPersistenceInterface
 
         foreach ($this->channelRepository->findAll() as $channel) {
             /** @var \Sylius\Component\Core\Model\ChannelInterface $channel */
-            $channelCode    = $channel->getCode();
+            $channelCode = $channel->getCode();
             $channelPricing = $variant->getChannelPricingForChannel($channel);
 
             if ($channelPricing === null) {

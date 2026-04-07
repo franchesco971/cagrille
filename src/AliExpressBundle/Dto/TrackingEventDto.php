@@ -10,8 +10,8 @@ namespace Cagrille\AliExpressBundle\Dto;
 final class TrackingEventDto
 {
     public function __construct(
-        public readonly string             $description,
-        public readonly string             $location,
+        public readonly string $description,
+        public readonly string $location,
         public readonly \DateTimeImmutable $occurredAt,
     ) {
     }

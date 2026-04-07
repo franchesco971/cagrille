@@ -23,18 +23,20 @@ use Psr\Log\LoggerInterface;
  */
 class TokenRefreshService
 {
-    private const AUTH_URL           = 'https://oauth.aliexpress-solution.com/oauth/authorize';
-    private const TOKEN_CREATE_PATH  = '/rest/auth/token/create';
+    private const AUTH_URL = 'https://oauth.aliexpress-solution.com/oauth/authorize';
+
+    private const TOKEN_CREATE_PATH = '/rest/auth/token/create';
+
     private const TOKEN_REFRESH_PATH = '/rest/auth/token/refresh';
 
     private readonly IopClient $iopClient;
 
     public function __construct(
-        private readonly string                $appKey,
-        private readonly string                $appSecret,
-        private readonly string                $baseUrl,
+        private readonly string $appKey,
+        private readonly string $appSecret,
+        private readonly string $baseUrl,
         private readonly TokenStorageInterface $tokenStorage,
-        private readonly LoggerInterface       $logger,
+        private readonly LoggerInterface $logger,
     ) {
         $this->iopClient = new IopClient(
             url:  $this->baseUrl,
@@ -52,9 +54,9 @@ class TokenRefreshService
     {
         return self::AUTH_URL . '?' . http_build_query([
             'response_type' => 'code',
-            'force_auth'    => 'true',
-            'redirect_uri'  => $redirectUri,
-            'client_id'     => $this->appKey,
+            'force_auth' => 'true',
+            'redirect_uri' => $redirectUri,
+            'client_id' => $this->appKey,
         ]);
     }
 
@@ -94,7 +96,9 @@ class TokenRefreshService
      * Appelle un endpoint d'authentification AliExpress via le SDK IOP.
      *
      * @param array<string, string> $extraParams
+     *
      * @return array<string, mixed>
+     *
      * @throws AliExpressApiException
      */
     private function callAuthEndpoint(string $path, array $extraParams): array
@@ -129,7 +133,7 @@ class TokenRefreshService
      */
     private function saveFromResponse(array $data): void
     {
-        $accessToken  = is_string($data['access_token']) ? $data['access_token'] : '';
+        $accessToken = is_string($data['access_token']) ? $data['access_token'] : '';
         $refreshToken = isset($data['refresh_token']) && is_string($data['refresh_token'])
             ? $data['refresh_token']
             : null;
@@ -138,7 +142,7 @@ class TokenRefreshService
 
         // expire_time : unix timestamp en millisecondes (format standard AliExpress)
         if (isset($data['expire_time']) && is_numeric($data['expire_time'])) {
-            $ts        = (int) $data['expire_time'];
+            $ts = (int) $data['expire_time'];
             $expiresAt = \DateTimeImmutable::createFromFormat('U', (string) intdiv($ts, 1000)) ?: null;
         }
         // expires_in : durée en secondes (format alternatif)

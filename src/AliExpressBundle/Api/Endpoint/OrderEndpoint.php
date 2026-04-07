@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Cagrille\AliExpressBundle\Api\Endpoint;
 
-use Cagrille\AliExpressBundle\Contract\OrderEndpointInterface;
 use Cagrille\AliExpressBundle\Contract\AliExpressApiClientInterface;
+use Cagrille\AliExpressBundle\Contract\OrderEndpointInterface;
 use Cagrille\AliExpressBundle\Dto\OrderDto;
 use Cagrille\AliExpressBundle\Dto\OrderRequestDto;
 
@@ -29,9 +29,9 @@ class OrderEndpoint implements OrderEndpointInterface
     {
         $productItems = array_map(
             static fn (\Cagrille\AliExpressBundle\Dto\OrderItemDto $item): array => [
-                'product_id'    => $item->productId,
+                'product_id' => $item->productId,
                 'product_count' => $item->quantity,
-                'sku_attr'      => $item->skuAttr,
+                'sku_attr' => $item->skuAttr,
             ],
             $request->items,
         );
@@ -40,14 +40,14 @@ class OrderEndpoint implements OrderEndpointInterface
             'product_items' => json_encode($productItems),
             'logistics_service_name' => $request->logisticsService,
             'international_transport_mode' => 'AIR',
-            'out_order_id'   => $request->syliusOrderId,
-            'address'        => json_encode([
-                'contact_person'   => $request->recipientName,
-                'mobile_no'        => $request->recipientPhone,
-                'address'          => $request->shippingAddress,
-                'city'             => $request->city,
-                'zip'              => $request->zipCode,
-                'country'          => $request->country,
+            'out_order_id' => $request->syliusOrderId,
+            'address' => json_encode([
+                'contact_person' => $request->recipientName,
+                'mobile_no' => $request->recipientPhone,
+                'address' => $request->shippingAddress,
+                'city' => $request->city,
+                'zip' => $request->zipCode,
+                'country' => $request->country,
             ]),
         ]);
 

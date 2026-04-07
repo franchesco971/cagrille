@@ -11,13 +11,13 @@ namespace Cagrille\AliExpressBundle\Dto;
 final class OrderDto
 {
     public function __construct(
-        public readonly string             $aliExpressOrderId,
-        public readonly string             $syliusOrderId,
-        public readonly string             $status,           // ex: "PLACE_ORDER_SUCCESS"
-        public readonly float              $totalAmount,
-        public readonly string             $currency,
-        public readonly string             $trackingNumber,
-        public readonly string             $carrier,
+        public readonly string $aliExpressOrderId,
+        public readonly string $syliusOrderId,
+        public readonly string $status,           // ex: "PLACE_ORDER_SUCCESS"
+        public readonly float $totalAmount,
+        public readonly string $currency,
+        public readonly string $trackingNumber,
+        public readonly string $carrier,
         public readonly \DateTimeImmutable $createdAt,
     ) {
     }

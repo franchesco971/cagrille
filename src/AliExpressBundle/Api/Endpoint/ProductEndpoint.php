@@ -52,8 +52,8 @@ class ProductEndpoint implements ProductEndpointInterface
         $data = $this->client->call('aliexpress.affiliate.product.query', array_merge(
             $this->client->getProductQueryDefaults(),
             [
-                'keywords'  => $keyword,
-                'page_no'   => $page,
+                'keywords' => $keyword,
+                'page_no' => $page,
                 'page_size' => $pageSize,
             ],
         ));

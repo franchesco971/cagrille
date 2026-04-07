@@ -38,10 +38,10 @@ class AliExpressTokenExtension extends AbstractExtension
     public function getTokenInfo(): array
     {
         return [
-            'expires_at'        => $this->tokenStorage->getExpiresAt(),
+            'expires_at' => $this->tokenStorage->getExpiresAt(),
             'has_refresh_token' => $this->tokenStorage->getRefreshToken() !== null,
-            'expiring_soon'     => $this->tokenStorage->isExpiringSoon(3600),
-            'callback_url'      => $this->urlGenerator->generate(
+            'expiring_soon' => $this->tokenStorage->isExpiringSoon(3600),
+            'callback_url' => $this->urlGenerator->generate(
                 'cagrille_admin_aliexpress_sync_auth_callback',
                 [],
                 UrlGeneratorInterface::ABSOLUTE_URL,

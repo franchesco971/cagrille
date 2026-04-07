@@ -30,7 +30,7 @@ class LogisticsEndpoint implements LogisticsEndpointInterface
             'order_id' => $orderId,
         ]);
 
-        $result   = $data['aliexpress_ds_trade_order_logistics_get_response']['result'] ?? [];
+        $result = $data['aliexpress_ds_trade_order_logistics_get_response']['result'] ?? [];
         $rawEvents = $result['details']['module'] ?? [];
 
         $events = array_map(

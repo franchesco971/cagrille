@@ -14,6 +14,7 @@ interface AliExpressApiClientInterface
      * Appelle une méthode de l'API AliExpress DS via POST.
      *
      * @throws \Cagrille\AliExpressBundle\Exception\AliExpressApiException
+     *
      * @phpstan-ignore missingType.iterableValue
      */
     public function call(string $method, array $params = []): array;

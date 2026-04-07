@@ -83,7 +83,7 @@ final class AliExpressOrderPlacementService implements AliExpressOrderPlacementS
 
             $collected[] = [
                 'aliOrder' => $aliOrder,
-                'itemDto'  => new OrderItemDto(
+                'itemDto' => new OrderItemDto(
                     productId: $aliExpressProductId,
                     quantity:  $item->getQuantity(),
                     skuAttr:   $aliOrder->getSkuAttr(),
@@ -104,7 +104,7 @@ final class AliExpressOrderPlacementService implements AliExpressOrderPlacementS
         $placed = $this->doPlaceGroupedOrder($collected, (int) $orderId, $address);
 
         $this->logger->info('[AliExpress] Commande Sylius #{id} : {count} article(s) groupé(s) en 1 commande AliExpress.', [
-            'id'    => $orderId,
+            'id' => $orderId,
             'count' => count($collected),
         ]);
 
@@ -153,38 +153,109 @@ final class AliExpressOrderPlacementService implements AliExpressOrderPlacementS
     }
 
     /**
-     * @return int 1 si succès, 0 sinon
+     * Envoie un unique appel API pour tous les items groupés, puis met à jour chaque entité.
+     *
+     * @param array<array{aliOrder: AliExpressOrder, itemDto: OrderItemDto}> $collected
      */
-    private function placeItemOrder(
-        int $syliusOrderId,
-        OrderItemInterface $item,
-        string $aliExpressProductId,
-        AddressInterface $address,
-    ): int {
-        $itemId = $item->getId();
+    private function doPlaceGroupedOrder(array $collected, int $syliusOrderId, AddressInterface $address): bool
+    {
+        $items = array_map(static fn (array $entry): OrderItemDto => $entry['itemDto'], $collected);
 
-        if ($itemId === null) {
-            return 0;
-        }
+        $street = $address->getStreet() ?? '';
+        $city = $address->getCity() ?? '';
+        $zip = $address->getPostcode() ?? '';
+        $country = $address->getCountryCode() ?? 'FR';
+        $firstName = $address->getFirstName() ?? '';
+        $lastName = $address->getLastName() ?? '';
+        $phone = $address->getPhoneNumber() ?? '';
 
-        $aliOrder = new AliExpressOrder(
-            syliusOrderId:      $syliusOrderId,
-            syliusOrderItemId:  (int) $itemId,
-            aliExpressProductId: $aliExpressProductId,
-            quantity:           $item->getQuantity(),
+        $request = new OrderRequestDto(
+            syliusOrderId:   (string) $syliusOrderId,
+            items:           $items,
+            shippingAddress: $street,
+            recipientName:   trim($firstName . ' ' . $lastName),
+            recipientPhone:  $phone,
+            country:         $country,
+            city:            $city,
+            zipCode:         $zip,
+            logisticsService: self::DEFAULT_LOGISTICS_SERVICE,
         );
 
-        $this->orderRepository->save($aliOrder, flush: true);
+        try {
+            $dto = $this->orderEndpoint->create($request);
 
-        $success = $this->doPlaceOrder($aliOrder, $address);
+            foreach ($collected as $entry) {
+                $entry['aliOrder']->markAsPlaced(
+                    aliExpressOrderId: $dto->aliExpressOrderId,
+                    totalAmount:       $dto->totalAmount / count($collected),
+                    currency:          $dto->currency,
+                );
+                $this->orderRepository->save($entry['aliOrder'], flush: false);
+            }
 
-        return $success ? 1 : 0;
+            $this->orderRepository->flush();
+
+            $this->logger->info('[AliExpress] Commande groupée placée : AliExpress#{ae} ← Sylius#{sylius}', [
+                'ae' => $dto->aliExpressOrderId,
+                'sylius' => $syliusOrderId,
+            ]);
+
+            return true;
+        } catch (AliExpressApiException $e) {
+            $this->markAllFailed($collected, $e->getMessage());
+
+            $this->logger->error('[AliExpress] Erreur API placement groupé (code: {code}) : {msg}', [
+                'code' => $e->apiCode,
+                'msg' => $e->getMessage(),
+            ]);
+        } catch (\Throwable $e) {
+            $this->markAllFailed($collected, $e->getMessage());
+
+            $this->logger->error('[AliExpress] Erreur inattendue lors du placement groupé : {msg}', [
+                'msg' => $e->getMessage(),
+            ]);
+        }
+
+        return false;
     }
 
-    private function doPlaceOrder(AliExpressOrder $aliOrder, ?AddressInterface $address = null): bool
+    /**
+     * @param array<array{aliOrder: AliExpressOrder, itemDto: OrderItemDto}> $collected
+     */
+    private function markAllFailed(array $collected, string $errorMessage): void
     {
+        foreach ($collected as $entry) {
+            $entry['aliOrder']->markAsFailed($errorMessage);
+            $this->orderRepository->save($entry['aliOrder'], flush: false);
+        }
+
+        $this->orderRepository->flush();
+    }
+
+    private function doPlaceOrder(AliExpressOrder $aliOrder): bool
+    {
+        $aliExpressProductId = $aliOrder->getAliExpressProductId();
+        $itemDto = new OrderItemDto(
+            productId: $aliExpressProductId,
+            quantity:  $aliOrder->getQuantity(),
+            skuAttr:   $aliOrder->getSkuAttr(),
+        );
+
+        // Pour le retry on n'a pas l'adresse en mémoire — on reconstruit une requête minimale
+        // avec un item unique (même comportement qu'avant le groupement)
+        $request = new OrderRequestDto(
+            syliusOrderId:   (string) $aliOrder->getSyliusOrderId(),
+            items:           [$itemDto],
+            shippingAddress: '',
+            recipientName:   '',
+            recipientPhone:  '',
+            country:         'FR',
+            city:            '',
+            zipCode:         '',
+            logisticsService: self::DEFAULT_LOGISTICS_SERVICE,
+        );
+
         try {
-            $request = $this->buildOrderRequest($aliOrder, $address);
             $dto = $this->orderEndpoint->create($request);
 
             $aliOrder->markAsPlaced(
@@ -193,21 +264,21 @@ final class AliExpressOrderPlacementService implements AliExpressOrderPlacementS
                 currency:          $dto->currency,
             );
 
-            $this->logger->info('[AliExpress] Commande placée : AliExpress#{ae} ← Sylius item#{item}', [
+            $this->logger->info('[AliExpress] Retry réussi : AliExpress#{ae} ← Sylius item#{item}', [
                 'ae' => $dto->aliExpressOrderId,
                 'item' => $aliOrder->getSyliusOrderItemId(),
             ]);
         } catch (AliExpressApiException $e) {
             $aliOrder->markAsFailed($e->getMessage());
 
-            $this->logger->error('[AliExpress] Erreur placement (code: {code}) : {msg}', [
+            $this->logger->error('[AliExpress] Erreur retry (code: {code}) : {msg}', [
                 'code' => $e->apiCode,
                 'msg' => $e->getMessage(),
             ]);
         } catch (\Throwable $e) {
             $aliOrder->markAsFailed($e->getMessage());
 
-            $this->logger->error('[AliExpress] Erreur inattendue lors du placement : {msg}', [
+            $this->logger->error('[AliExpress] Erreur inattendue lors du retry : {msg}', [
                 'msg' => $e->getMessage(),
             ]);
         }
@@ -215,30 +286,5 @@ final class AliExpressOrderPlacementService implements AliExpressOrderPlacementS
         $this->orderRepository->save($aliOrder, flush: true);
 
         return $aliOrder->getStatus()->value === 'placed';
-    }
-
-    private function buildOrderRequest(AliExpressOrder $aliOrder, ?AddressInterface $address = null): OrderRequestDto
-    {
-        $street = $address?->getStreet() ?? '';
-        $city = $address?->getCity() ?? '';
-        $zip = $address?->getPostcode() ?? '';
-        $country = $address?->getCountryCode() ?? 'FR';
-        $firstName = $address?->getFirstName() ?? '';
-        $lastName = $address?->getLastName() ?? '';
-        $phone = $address?->getPhoneNumber() ?? '';
-
-        return new OrderRequestDto(
-            syliusOrderId:    (string) $aliOrder->getSyliusOrderId(),
-            productId:        $aliOrder->getAliExpressProductId(),
-            quantity:         $aliOrder->getQuantity(),
-            skuAttr:          $aliOrder->getSkuAttr(),
-            shippingAddress:  $street,
-            recipientName:    trim($firstName . ' ' . $lastName),
-            recipientPhone:   $phone,
-            country:          $country,
-            city:             $city,
-            zipCode:          $zip,
-            logisticsService: self::DEFAULT_LOGISTICS_SERVICE,
-        );
     }
 }

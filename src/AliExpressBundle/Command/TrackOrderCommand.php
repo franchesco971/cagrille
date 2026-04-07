@@ -38,14 +38,15 @@ class TrackOrderCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $io          = new SymfonyStyle($input, $output);
-        $rawOrderId  = $input->getOption('order');
+        $io = new SymfonyStyle($input, $output);
+        $rawOrderId = $input->getOption('order');
         $rawTracking = $input->getOption('tracking');
-        $orderId     = is_string($rawOrderId)  ? $rawOrderId  : '';
+        $orderId = is_string($rawOrderId) ? $rawOrderId : '';
         $trackingNum = is_string($rawTracking) ? $rawTracking : '';
 
         if ($orderId === '' || $trackingNum === '') {
             $io->error('Les options --order et --tracking sont obligatoires.');
+
             return Command::FAILURE;
         }
 
@@ -62,7 +63,7 @@ class TrackOrderCommand extends Command
             if (!empty($tracking->events)) {
                 $io->section('Événements de livraison');
                 $rows = array_map(
-                    static fn($e) => [$e->occurredAt->format('d/m/Y H:i'), $e->location, $e->description],
+                    static fn ($e) => [$e->occurredAt->format('d/m/Y H:i'), $e->location, $e->description],
                     $tracking->events,
                 );
                 $io->table(['Date', 'Lieu', 'Description'], $rows);
@@ -71,6 +72,7 @@ class TrackOrderCommand extends Command
             return Command::SUCCESS;
         } catch (\Throwable $e) {
             $io->error($e->getMessage());
+
             return Command::FAILURE;
         }
     }

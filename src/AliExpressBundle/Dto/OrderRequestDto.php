@@ -15,7 +15,7 @@ final class OrderRequestDto
      */
     public function __construct(
         public readonly string $syliusOrderId,
-        public readonly array  $items,           // Liste des articles à commander
+        public readonly array $items,           // Liste des articles à commander
         public readonly string $shippingAddress,
         public readonly string $recipientName,
         public readonly string $recipientPhone,

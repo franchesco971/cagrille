@@ -25,25 +25,26 @@ use Psr\Log\LoggerInterface;
 class AliExpressApiClient implements AliExpressApiClientInterface
 {
     private const API_VERSION = '2.0';
+
     private const SIGN_METHOD = 'sha256';
 
     private readonly Client $httpClient;
 
     public function __construct(
-        private readonly string                $appKey,
-        private readonly string                $appSecret,
+        private readonly string $appKey,
+        private readonly string $appSecret,
         private readonly TokenStorageInterface $tokenStorage,
-        private readonly TokenRefreshService   $tokenRefreshService,
-        private readonly string                $baseUrl,
-        private readonly int                   $timeout,
-        private readonly string                $targetCurrency,
-        private readonly string                $targetLanguage,
-        private readonly string                $shipToCountry,
-        private readonly LoggerInterface       $logger,
+        private readonly TokenRefreshService $tokenRefreshService,
+        private readonly string $baseUrl,
+        private readonly int $timeout,
+        private readonly string $targetCurrency,
+        private readonly string $targetLanguage,
+        private readonly string $shipToCountry,
+        private readonly LoggerInterface $logger,
     ) {
         $this->httpClient = new Client([
             'base_uri' => rtrim($this->baseUrl, '/'),
-            'timeout'  => $this->timeout,
+            'timeout' => $this->timeout,
         ]);
     }
 
@@ -51,6 +52,7 @@ class AliExpressApiClient implements AliExpressApiClientInterface
      * Envoie une requête POST signée à l'API AliExpress DS.
      *
      * {@inheritdoc}
+     *
      * @phpstan-ignore missingType.iterableValue
      */
     public function call(string $method, array $params = []): array
@@ -67,17 +69,17 @@ class AliExpressApiClient implements AliExpressApiClientInterface
         }
 
         $commonParams = [
-            'app_key'      => $this->appKey,
-            'method'       => $method,
-            'session'      => $this->tokenStorage->getAccessToken(),
-            'timestamp'    => date('Y-m-d H:i:s'),
-            'format'       => 'json',
-            'v'            => self::API_VERSION,
-            'sign_method'  => self::SIGN_METHOD,
+            'app_key' => $this->appKey,
+            'method' => $method,
+            'session' => $this->tokenStorage->getAccessToken(),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'format' => 'json',
+            'v' => self::API_VERSION,
+            'sign_method' => self::SIGN_METHOD,
         ];
 
-        $allParams              = array_merge($commonParams, $params);
-        $allParams['sign']      = $this->generateSignature($allParams);
+        $allParams = array_merge($commonParams, $params);
+        $allParams['sign'] = $this->generateSignature($allParams);
 
         try {
             $response = $this->httpClient->post('/sync', [
@@ -93,9 +95,10 @@ class AliExpressApiClient implements AliExpressApiClientInterface
             return $this->decodeResponse($body, $method);
         } catch (GuzzleException $e) {
             $this->logger->error('[AliExpress] Erreur {method}: {message}', [
-                'method'  => $method,
+                'method' => $method,
                 'message' => $e->getMessage(),
             ]);
+
             throw new AliExpressApiException($e->getMessage(), $e->getCode(), '', $e);
         }
     }
@@ -109,9 +112,9 @@ class AliExpressApiClient implements AliExpressApiClientInterface
     public function getProductQueryDefaults(): array
     {
         return [
-            'target_currency'  => $this->targetCurrency,
-            'target_language'  => $this->targetLanguage,
-            'ship_to_country'  => $this->shipToCountry,
+            'target_currency' => $this->targetCurrency,
+            'target_language' => $this->targetLanguage,
+            'ship_to_country' => $this->shipToCountry,
         ];
     }
 
@@ -139,27 +142,30 @@ class AliExpressApiClient implements AliExpressApiClientInterface
      * Décode la réponse JSON et lève une exception si l'API retourne une erreur.
      *
      * @return array<string, mixed>
+     *
      * @throws AliExpressApiException
      */
     private function decodeResponse(string $body, string $method): array
     {
-        $data = json_decode($body, true);
+        $rawData = json_decode($body, true);
 
-        if (!is_array($data)) {
+        if (!is_array($rawData)) {
             throw new AliExpressApiException(
-                sprintf('[AliExpress] Réponse non-JSON pour %s : %s', $method, substr($body, 0, 200))
+                sprintf('[AliExpress] Réponse non-JSON pour %s : %s', $method, substr($body, 0, 200)),
             );
         }
 
         /** @var array<string, mixed> $data */
+        $data = $rawData;
 
         // L'API AliExpress retourne les erreurs sous error_response
         if (isset($data['error_response']) && is_array($data['error_response'])) {
             /** @var array<string, mixed> $err */
-            $err        = $data['error_response'];
-            $errCode    = isset($err['code'])     && is_scalar($err['code'])     ? (string) $err['code']     : '';
-            $errMsg     = isset($err['msg'])      && is_scalar($err['msg'])      ? (string) $err['msg']      : '';
+            $err = $data['error_response'];
+            $errCode = isset($err['code']) && is_scalar($err['code']) ? (string) $err['code'] : '';
+            $errMsg = isset($err['msg']) && is_scalar($err['msg']) ? (string) $err['msg'] : '';
             $errSubCode = isset($err['sub_code']) && is_scalar($err['sub_code']) ? (string) $err['sub_code'] : '';
+
             throw new AliExpressApiException(
                 sprintf('[AliExpress] Erreur API %s : %s — %s', $method, $errCode, $errMsg),
                 (int) $errCode,

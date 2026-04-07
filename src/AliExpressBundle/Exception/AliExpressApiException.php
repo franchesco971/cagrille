@@ -11,8 +11,8 @@ namespace Cagrille\AliExpressBundle\Exception;
 class AliExpressApiException extends \RuntimeException
 {
     public function __construct(
-        string     $message,
-        int        $code = 0,
+        string $message,
+        int $code = 0,
         public readonly string $apiCode = '',
         ?\Throwable $previous = null,
     ) {

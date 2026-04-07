@@ -16,7 +16,7 @@ class Configuration implements ConfigurationInterface
     public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder('ali_express');
-        $rootNode    = $treeBuilder->getRootNode();
+        $rootNode = $treeBuilder->getRootNode();
 
         $rootNode
             ->children()
@@ -52,7 +52,7 @@ class Configuration implements ConfigurationInterface
                 ->end()
                 ->scalarNode('ship_to_country')
                     ->defaultValue('FR')
-                    ->info('Code pays ISO destinataire (filtre disponibilité & livraison)')                
+                    ->info('Code pays ISO destinataire (filtre disponibilité & livraison)')
                 ->end()
                 ->arrayNode('sync')
                     ->addDefaultsIfNotSet()

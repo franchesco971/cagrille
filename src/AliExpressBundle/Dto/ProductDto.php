@@ -16,19 +16,19 @@ final class ProductDto
      * @phpstan-ignore missingType.iterableValue
      */
     public function __construct(
-        public readonly string             $aliExpressId,  // item_id AliExpress
-        public readonly string             $name,
-        public readonly string             $description,
-        public readonly float              $price,         // Prix d'achat fournisseur (USD)
-        public readonly string             $currency,
-        public readonly int                $stock,
-        public readonly array              $images,        // URLs des images
-        public readonly array              $skus,          // Variants (couleur, taille, etc.)
-        public readonly string             $categoryId,
-        public readonly string             $storeId,
-        public readonly string             $storeName,
-        public readonly string             $shipsFrom,     // Code pays expédition (ex: "CN")
-        public readonly int                $shippingDays,  // Délai livraison estimé (jours)
+        public readonly string $aliExpressId,  // item_id AliExpress
+        public readonly string $name,
+        public readonly string $description,
+        public readonly float $price,         // Prix d'achat fournisseur (USD)
+        public readonly string $currency,
+        public readonly int $stock,
+        public readonly array $images,        // URLs des images
+        public readonly array $skus,          // Variants (couleur, taille, etc.)
+        public readonly string $categoryId,
+        public readonly string $storeId,
+        public readonly string $storeName,
+        public readonly string $shipsFrom,     // Code pays expédition (ex: "CN")
+        public readonly int $shippingDays,  // Délai livraison estimé (jours)
         public readonly \DateTimeImmutable $updatedAt,
     ) {
     }
@@ -47,15 +47,15 @@ final class ProductDto
     public static function fromApiResponse(array $result): self
     {
         $baseInfo = $result['ae_item_base_info_dto'] ?? [];
-        $skus     = $result['ae_item_sku_info_dtos']['ae_item_sku_info_d_t_o'] ?? [];
+        $skus = $result['ae_item_sku_info_dtos']['ae_item_sku_info_d_t_o'] ?? [];
         $storeInfo = $result['ae_store_info'] ?? [];
 
         $firstSku = $skus[0] ?? [];
-        $price    = (float) ($firstSku['offer_sale_price'] ?? $firstSku['sku_price'] ?? 0.0);
+        $price = (float) ($firstSku['offer_sale_price'] ?? $firstSku['sku_price'] ?? 0.0);
 
         // Stock : somme des sku_available_stock ou totalAvailQuantity si présent
         $stock = (int) ($baseInfo['totalAvailQuantity'] ?? array_sum(
-            array_column($skus, 'sku_available_stock')
+            array_column($skus, 'sku_available_stock'),
         ));
 
         return new self(

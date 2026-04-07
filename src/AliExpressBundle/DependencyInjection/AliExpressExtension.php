@@ -19,18 +19,18 @@ class AliExpressExtension extends Extension
     public function load(array $configs, ContainerBuilder $container): void
     {
         $configuration = new Configuration();
-        $config        = $this->processConfiguration($configuration, $configs);
+        $config = $this->processConfiguration($configuration, $configs);
 
-        $container->setParameter('ali_express.app_key',         $config['app_key']);
-        $container->setParameter('ali_express.app_secret',      $config['app_secret']);
-        $container->setParameter('ali_express.access_token',    $config['access_token']);
-        $container->setParameter('ali_express.base_url',        $config['base_url']);
-        $container->setParameter('ali_express.timeout',         $config['timeout']);
-        $container->setParameter('ali_express.target_currency',  $config['target_currency']);
-        $container->setParameter('ali_express.target_language',   $config['target_language']);
-        $container->setParameter('ali_express.ship_to_country',   $config['ship_to_country']);
-        $container->setParameter('ali_express.sync.batch_size',   $config['sync']['batch_size']);
-        $container->setParameter('ali_express.sync.keywords',   $config['sync']['keywords']);
+        $container->setParameter('ali_express.app_key', $config['app_key']);
+        $container->setParameter('ali_express.app_secret', $config['app_secret']);
+        $container->setParameter('ali_express.access_token', $config['access_token']);
+        $container->setParameter('ali_express.base_url', $config['base_url']);
+        $container->setParameter('ali_express.timeout', $config['timeout']);
+        $container->setParameter('ali_express.target_currency', $config['target_currency']);
+        $container->setParameter('ali_express.target_language', $config['target_language']);
+        $container->setParameter('ali_express.ship_to_country', $config['ship_to_country']);
+        $container->setParameter('ali_express.sync.batch_size', $config['sync']['batch_size']);
+        $container->setParameter('ali_express.sync.keywords', $config['sync']['keywords']);
 
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.yaml');

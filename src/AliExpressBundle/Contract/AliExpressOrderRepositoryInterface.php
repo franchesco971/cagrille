@@ -16,6 +16,8 @@ interface AliExpressOrderRepositoryInterface
 {
     public function save(AliExpressOrder $order, bool $flush = true): void;
 
+    public function flush(): void;
+
     public function find(int $id): ?AliExpressOrder;
 
     /**

@@ -27,9 +27,9 @@ final class MockOrderEndpoint implements OrderEndpointInterface
         $mockOrderId = 'MOCK-' . strtoupper(substr(md5($request->syliusOrderId . microtime()), 0, 10));
 
         $this->logger->info('[AliExpress][MOCK] Commande simulée créée : {orderId} pour Sylius#{syliusId} ({count} article(s))', [
-            'orderId'   => $mockOrderId,
-            'syliusId'  => $request->syliusOrderId,
-            'count'     => count($request->items),
+            'orderId' => $mockOrderId,
+            'syliusId' => $request->syliusOrderId,
+            'count' => count($request->items),
         ]);
 
         return new OrderDto(

@@ -18,12 +18,12 @@ use Psr\Log\LoggerInterface;
 class ProductSyncService implements ProductSyncServiceInterface
 {
     public function __construct(
-        private readonly ProductEndpointInterface    $productEndpoint,
+        private readonly ProductEndpointInterface $productEndpoint,
         private readonly ProductPersistenceInterface $persistence,
-        private readonly LoggerInterface             $logger,
+        private readonly LoggerInterface $logger,
         /** @var array<int, string> */
-        private readonly array                       $keywords,
-        private readonly int                         $batchSize,
+        private readonly array $keywords,
+        private readonly int $batchSize,
     ) {
     }
 
@@ -44,7 +44,7 @@ class ProductSyncService implements ProductSyncServiceInterface
 
     public function syncByKeyword(string $keyword): int
     {
-        $page  = 1;
+        $page = 1;
         $count = 0;
 
         do {
@@ -52,15 +52,15 @@ class ProductSyncService implements ProductSyncServiceInterface
 
             foreach ($products as $productDto) {
                 $this->persistence->upsert($productDto);
-                $count++;
+                ++$count;
             }
 
-            $page++;
+            ++$page;
         } while (count($products) === $this->batchSize);
 
         $this->logger->info('[AliExpress] Keyword "{keyword}" : {count} produits traités', [
             'keyword' => $keyword,
-            'count'   => $count,
+            'count' => $count,
         ]);
 
         return $count;

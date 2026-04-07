@@ -37,6 +37,11 @@ final class AliExpressOrderRepository implements AliExpressOrderRepositoryInterf
         }
     }
 
+    public function flush(): void
+    {
+        $this->entityManager->flush();
+    }
+
     public function find(int $id): ?AliExpressOrder
     {
         return $this->repository->find($id);
