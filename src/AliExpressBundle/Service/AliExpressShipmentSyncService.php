@@ -12,6 +12,7 @@ use Cagrille\AliExpressBundle\Entity\AliExpressOrderStatus;
 use Cagrille\AliExpressBundle\Exception\AliExpressApiException;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
+use Sylius\Bundle\CoreBundle\Mailer\ShipmentEmailManagerInterface;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\ShipmentInterface;
 use Sylius\Component\Core\Repository\OrderRepositoryInterface;
@@ -36,6 +37,7 @@ final class AliExpressShipmentSyncService implements AliExpressShipmentSyncServi
         private readonly AliExpressOrderRepositoryInterface $aliExpressOrderRepository,
         private readonly OrderRepositoryInterface $orderRepository,
         private readonly EntityManagerInterface $entityManager,
+        private readonly ShipmentEmailManagerInterface $shipmentEmailManager,
         private readonly LoggerInterface $logger,
     ) {
     }
@@ -48,6 +50,8 @@ final class AliExpressShipmentSyncService implements AliExpressShipmentSyncServi
             return;
         }
 
+        // Mémoriser l'état avant sync pour détecter la première apparition du tracking
+        $hadTracking = $aliExpressOrder->getTrackingNumber() !== null;
         $trackingNumber = $aliExpressOrder->getTrackingNumber() ?? '';
 
         try {
@@ -69,8 +73,13 @@ final class AliExpressShipmentSyncService implements AliExpressShipmentSyncServi
                 );
             }
 
-            $this->propagateToSyliusShipment($aliExpressOrder, $tracking->trackingNumber);
+            $shipment = $this->propagateToSyliusShipment($aliExpressOrder, $tracking->trackingNumber);
             $this->aliExpressOrderRepository->save($aliExpressOrder, flush: true);
+
+            // Notifier le client la première fois qu'un numéro de suivi apparaît
+            if (!$hadTracking && $aliExpressOrder->getTrackingNumber() !== null && $shipment !== null) {
+                $this->sendShipmentEmail($shipment, $aliExpressOrder->getSyliusOrderId());
+            }
 
             $this->logger->info('[AliExpress] Tracking synchronisé pour AliExpress#{id} : {status}', [
                 'id' => $aliExpressOrderId,
@@ -117,17 +126,17 @@ final class AliExpressShipmentSyncService implements AliExpressShipmentSyncServi
      * Met à jour le tracking number sur le premier Shipment de la commande Sylius.
      * Si le Shipment est déjà trackable, on ne l'écrase pas.
      */
-    private function propagateToSyliusShipment(AliExpressOrder $aliExpressOrder, string $trackingNumber): void
+    private function propagateToSyliusShipment(AliExpressOrder $aliExpressOrder, string $trackingNumber): ?ShipmentInterface
     {
         if ($trackingNumber === '') {
-            return;
+            return null;
         }
 
         /** @var OrderInterface|null $order */
         $order = $this->orderRepository->find($aliExpressOrder->getSyliusOrderId());
 
         if ($order === null) {
-            return;
+            return null;
         }
 
         foreach ($order->getShipments() as $shipment) {
@@ -137,8 +146,8 @@ final class AliExpressShipmentSyncService implements AliExpressShipmentSyncServi
             }
 
             if ($shipment->isTracked()) {
-                // Déjà suivi — ne pas écraser
-                continue;
+                // Déjà suivi — retourner le shipment existant sans écraser
+                return $shipment;
             }
 
             $shipment->setTracking($trackingNumber);
@@ -153,9 +162,29 @@ final class AliExpressShipmentSyncService implements AliExpressShipmentSyncServi
                 ],
             );
 
-            break; // Un seul shipment mis à jour par commande
+            $this->entityManager->flush();
+
+            return $shipment;
         }
 
-        $this->entityManager->flush();
+        return null;
+    }
+
+    private function sendShipmentEmail(ShipmentInterface $shipment, int $syliusOrderId): void
+    {
+        try {
+            $this->shipmentEmailManager->sendConfirmationEmail($shipment);
+
+            $this->logger->info(
+                '[AliExpress] Email expédition envoyé pour commande Sylius #{oid}',
+                ['oid' => $syliusOrderId],
+            );
+        } catch (\Throwable $e) {
+            // Non-bloquant : un échec d'email ne doit pas interrompre la sync
+            $this->logger->warning(
+                '[AliExpress] Échec envoi email expédition pour commande #{oid} : {msg}',
+                ['oid' => $syliusOrderId, 'msg' => $e->getMessage()],
+            );
+        }
     }
 }
