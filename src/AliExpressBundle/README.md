@@ -11,13 +11,14 @@ et suivi logistique avec notification email automatique.
 1. [Architecture](#architecture)
 2. [Installation & configuration](#installation--configuration)
 3. [Variables d'environnement](#variables-denvironnement)
-4. [Commandes CLI](#commandes-cli)
-5. [Commandes Make](#commandes-make)
-6. [Flux d'une commande dropship](#flux-dune-commande-dropship)
-7. [Suivi de livraison & notification client](#suivi-de-livraison--notification-client)
-8. [Connexion Sylius](#connexion-sylius)
-9. [Étendre le bundle](#étendre-le-bundle)
-10. [Principes de conception](#principes-de-conception)
+4. [OAuth — Obtenir un token](#oauth--obtenir-un-token)
+5. [Commandes CLI](#commandes-cli)
+6. [Commandes Make](#commandes-make)
+7. [Flux d'une commande dropship](#flux-dune-commande-dropship)
+8. [Suivi de livraison & notification client](#suivi-de-livraison--notification-client)
+9. [Connexion Sylius](#connexion-sylius)
+10. [Étendre le bundle](#étendre-le-bundle)
+11. [Principes de conception](#principes-de-conception)
 
 ---
 
@@ -33,11 +34,15 @@ src/AliExpressBundle/
 │       ├── OrderEndpoint.php             # Création commande groupée
 │       ├── MockOrderEndpoint.php         # Mock dev (sans appel API réel)
 │       └── LogisticsEndpoint.php         # Suivi colis
+├── Api/
+│   ├── TokenRefreshService.php           # Échange de code OAuth / refresh token
+│   └── TokenStorage.php                  # Stockage token JSON (var/aliexpress_token.json)
 ├── Command/
 │   ├── SyncProductsCommand.php           # aliexpress:sync:products
 │   ├── SyncShipmentsCommand.php          # aliexpress:shipment:sync
 │   ├── RetryFailedOrdersCommand.php      # aliexpress:orders:retry
-│   └── TrackOrderCommand.php             # aliexpress:order:track
+│   ├── TrackOrderCommand.php             # aliexpress:order:track
+│   └── GetTokenCommand.php               # aliexpress:auth:token
 ├── Contract/                             # Interfaces (DIP)
 │   ├── AliExpressApiClientInterface.php
 │   ├── AliExpressOrderRepositoryInterface.php
@@ -49,6 +54,9 @@ src/AliExpressBundle/
 │   ├── ProductPersistenceInterface.php
 │   ├── ProductSyncServiceInterface.php
 │   └── TokenStorageInterface.php
+├── Controller/
+│   ├── AliExpressOAuthCallbackController.php  # GET /aliexpress/callback
+│   └── Admin/
 ├── Dto/
 │   ├── ProductDto.php
 │   ├── OrderDto.php
@@ -97,13 +105,84 @@ Copier dans `.env.local` et renseigner les vraies valeurs :
 | `ALIEXPRESS_TIMEOUT` | Timeout HTTP (secondes) | `30` |
 | `ALIEXPRESS_TARGET_CURRENCY` | Devise du prix affiché | `EUR` |
 | `ALIEXPRESS_TARGET_LANGUAGE` | Langue des descriptions | `fr` |
+| `ALIEXPRESS_SHIP_TO_COUNTRY` | Pays de livraison | `FR` |
 | `ALIEXPRESS_SYNC_KEYWORDS` | Mots-clés de sync (JSON) | `["barbecue","grill","bbq accessories"]` |
 | `ALIEXPRESS_SYNC_BATCH_SIZE` | Produits par page | `20` |
+| `ALIEXPRESS_REDIRECT_URI` | URL de callback OAuth enregistrée chez AliExpress | `https://cagrille.fr/aliexpress/callback` |
 
 **Obtenir les credentials :** https://developers.aliexpress-solution.com
 
 > **Dev :** en environnement `dev`, `OrderEndpointInterface` est automatiquement
 > substitué par `MockOrderEndpoint` (aucun appel réel, logs uniquement).
+
+---
+
+## OAuth — Obtenir un token
+
+Le token OAuth est nécessaire pour tous les appels API. Il est stocké dans
+`var/aliexpress_token.json` et se rafraîchit automatiquement.
+
+### Flux initial (première fois)
+
+```bash
+# Étape 1 : affiche l'URL d'autorisation
+docker compose run --rm php bin/console aliexpress:auth:token
+```
+
+Ouvrez l'URL dans votre navigateur → connectez-vous avec le compte vendeur AliExpress
+→ approuvez l'accès → vous êtes redirigé vers :
+
+```
+https://cagrille.fr/aliexpress/callback?code=3_529794_XXXX
+```
+
+Si vous êtes connecté à l'admin Sylius, le **callback est automatiquement géré** :
+le code est échangé et le token sauvegardé. Vous êtes redirigé vers le panneau admin.
+
+Sinon (hors navigateur / SSH), copiez le `code` et relancez :
+
+```bash
+# Étape 2 : échange du code
+docker compose run --rm php bin/console aliexpress:auth:token --code=3_529794_XXXX
+```
+
+### Comportement automatique de la commande
+
+Sans option, la commande détecte l'état du token et agit automatiquement :
+
+| État du token | Action |
+|---|---|
+| Absent | Affiche l'URL OAuth (étape 1) |
+| Valide | Affiche le statut |
+| Expiré + `refresh_token` disponible | **Rafraîchit automatiquement** |
+| Expiré + pas de `refresh_token` | Affiche l'URL OAuth |
+
+```bash
+# Maintenance courante (idéal pour un cron)
+docker compose run --rm php bin/console aliexpress:auth:token
+```
+
+### Options disponibles
+
+```bash
+--code=XXX    # Échange manuellement un code de callback
+--status      # Affiche access_token, refresh_token, date d'expiration
+--refresh     # Force le renouvellement via le refresh_token
+```
+
+### Callback HTTP automatique (via navigateur)
+
+Quand un administrateur Sylius ouvre l'URL OAuth dans son navigateur,
+AliExpress redirige vers `https://cagrille.fr/aliexpress/callback?code=XXX`.
+Le contrôleur `AliExpressOAuthCallbackController` capture ce code,
+échange le token et redirige vers le panneau admin sans aucune action manuelle.
+
+### Maintenance du token (cron)
+
+```cron
+# Vérification / refresh automatique toutes les heures
+0 * * * *  www-data  cd /var/www/cagrille && docker compose exec -T php bin/console aliexpress:auth:token
+```
 
 ---
 
@@ -158,6 +237,9 @@ make sync-tracking    # Lance aliexpress:shipment:sync (à planifier via cron)
 make retry-orders     # Lance aliexpress:orders:retry
 make stan             # Analyse PHPStan niveau 9
 ```
+
+> Pour la gestion du token OAuth, utiliser directement `bin/console aliexpress:auth:token`
+> (voir section [OAuth — Obtenir un token](#oauth--obtenir-un-token)).
 
 ### Planification automatique (production)
 
@@ -287,6 +369,7 @@ Cagrille\AliExpressBundle\Contract\ProductPersistenceInterface:
 | **OCP** | Persistance, endpoint et placement swappables sans modifier les services |
 | **Null Object** | `NullProductPersistence`, `MockOrderEndpoint` — pas de mock en test |
 | **Batch groupé** | Un seul appel API par commande, quel que soit le nombre d'articles |
+| **Token auto** | `TokenStorage` + `TokenRefreshService` — refresh transparent avant expiration |
 
 
 Bundle Symfony/Sylius dédié à l'intégration de **l'API AliExpress Open Platform (DS)**

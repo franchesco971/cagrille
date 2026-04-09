@@ -30,7 +30,7 @@ class NullProductPersistence implements ProductPersistenceInterface
             '[Alibaba] NullProductPersistence : aucun adaptateur de persistance configuré. '
             . 'Décommentez SyliusProductPersistence dans config/services.yaml '
             . 'après avoir configuré Sylius. Produit ignoré : {id}',
-            ['id' => $dto->alibabaId]
+            ['id' => $dto->alibabaId],
         );
     }
 

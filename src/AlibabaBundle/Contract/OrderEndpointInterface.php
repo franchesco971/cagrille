@@ -27,6 +27,7 @@ interface OrderEndpointInterface
      * Liste les commandes avec filtres optionnels.
      *
      * @return OrderDto[]
+     *
      * @phpstan-ignore missingType.iterableValue
      */
     public function list(array $filters = [], int $page = 1, int $pageSize = 20): array;

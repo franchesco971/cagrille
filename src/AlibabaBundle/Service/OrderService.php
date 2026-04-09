@@ -17,7 +17,7 @@ class OrderService
 {
     public function __construct(
         private readonly OrderEndpointInterface $orderEndpoint,
-        private readonly LoggerInterface        $logger,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -28,14 +28,14 @@ class OrderService
     {
         $this->logger->info('[Alibaba] Passage de commande fournisseur : {supplier}', [
             'supplier' => $request->supplierId,
-            'items'    => count($request->items),
+            'items' => count($request->items),
         ]);
 
         $order = $this->orderEndpoint->create($request);
 
         $this->logger->info('[Alibaba] Commande créée : {orderId} (statut: {status})', [
             'orderId' => $order->orderId,
-            'status'  => $order->status,
+            'status' => $order->status,
         ]);
 
         return $order;
@@ -58,7 +58,7 @@ class OrderService
 
         $this->logger->info('[Alibaba] Annulation commande {orderId} : {result}', [
             'orderId' => $orderId,
-            'result'  => $success ? 'succès' : 'échec',
+            'result' => $success ? 'succès' : 'échec',
         ]);
 
         return $success;

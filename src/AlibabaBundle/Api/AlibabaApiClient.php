@@ -24,19 +24,19 @@ class AlibabaApiClient implements AlibabaApiClientInterface
     private readonly Client $httpClient;
 
     public function __construct(
-        private readonly string          $appKey,
-        private readonly string          $appSecret,
-        private readonly string          $accessToken,
-        private readonly string          $baseUrl,
-        private readonly int             $timeout,
+        private readonly string $appKey,
+        private readonly string $appSecret,
+        private readonly string $accessToken,
+        private readonly string $baseUrl,
+        private readonly int $timeout,
         private readonly LoggerInterface $logger,
     ) {
         $this->httpClient = new Client([
             'base_uri' => rtrim($this->baseUrl, '/'),
-            'timeout'  => $this->timeout,
-            'headers'  => [
+            'timeout' => $this->timeout,
+            'headers' => [
                 'Content-Type' => 'application/json',
-                'Accept'       => 'application/json',
+                'Accept' => 'application/json',
             ],
         ]);
     }
@@ -57,8 +57,9 @@ class AlibabaApiClient implements AlibabaApiClientInterface
         } catch (GuzzleException $e) {
             $this->logger->error('[Alibaba] Erreur GET {endpoint}: {message}', [
                 'endpoint' => $endpoint,
-                'message'  => $e->getMessage(),
+                'message' => $e->getMessage(),
             ]);
+
             throw new AlibabaApiException($e->getMessage(), $e->getCode(), '', $e);
         }
     }
@@ -73,15 +74,16 @@ class AlibabaApiClient implements AlibabaApiClientInterface
         try {
             $response = $this->httpClient->post('/rest' . $endpoint, [
                 'query' => $authParams,
-                'json'  => $payload,
+                'json' => $payload,
             ]);
 
             return $this->decodeResponse((string) $response->getBody(), $endpoint);
         } catch (GuzzleException $e) {
             $this->logger->error('[Alibaba] Erreur POST {endpoint}: {message}', [
                 'endpoint' => $endpoint,
-                'message'  => $e->getMessage(),
+                'message' => $e->getMessage(),
             ]);
+
             throw new AlibabaApiException($e->getMessage(), $e->getCode(), '', $e);
         }
     }
@@ -89,14 +91,15 @@ class AlibabaApiClient implements AlibabaApiClientInterface
     /**
      * Ajoute les paramètres d'authentification signés selon le protocole IOP Alibaba.
      * La signature HMAC-SHA256 est calculée sur apiPath + sorted key-value pairs.
+     *
      * @phpstan-ignore missingType.iterableValue
      */
     private function addAuthParams(array $params, string $method, string $endpoint): array
     {
-        $params['app_key']      = $this->appKey;
+        $params['app_key'] = $this->appKey;
         $params['access_token'] = $this->accessToken;
-        $params['timestamp']    = (string) (time() * 1000);
-        $params['sign_method']  = 'sha256';
+        $params['timestamp'] = (string) (time() * 1000);
+        $params['sign_method'] = 'sha256';
 
         ksort($params);
 
@@ -132,11 +135,11 @@ class AlibabaApiClient implements AlibabaApiClientInterface
     private function decodeResponse(string $body, string $endpoint): array
     {
         /** @var array<string, mixed> $data */
-        $data = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+        $data = json_decode($body, true, 512, \JSON_THROW_ON_ERROR);
 
         $this->logger->debug('[Alibaba] Réponse brute {endpoint}: {body}', [
             'endpoint' => $endpoint,
-            'body'     => $body,
+            'body' => $body,
         ]);
 
         // L'API IOP Alibaba retourne les erreurs sous deux formats possibles :
@@ -147,23 +150,25 @@ class AlibabaApiClient implements AlibabaApiClientInterface
             $errResponse = $data['error_response'];
             $this->logger->warning('[Alibaba] Erreur API {endpoint}: {error}', [
                 'endpoint' => $endpoint,
-                'error'    => json_encode($errResponse),
+                'error' => json_encode($errResponse),
             ]);
+
             throw AlibabaApiException::fromApiError($errResponse);
         }
 
-        if (isset($data['code'], $data['message'])
-            && is_string($data['code'])
-            && $data['code'] !== '0'
-            && is_string($data['message'])
+        if (isset($data['code'], $data['message']) &&
+            is_string($data['code']) &&
+            $data['code'] !== '0' &&
+            is_string($data['message'])
         ) {
-            $apiCode    = $data['code'];
+            $apiCode = $data['code'];
             $apiMessage = $data['message'];
             $this->logger->warning('[Alibaba] Erreur IOP {endpoint}: [{code}] {message}', [
                 'endpoint' => $endpoint,
-                'code'     => $apiCode,
-                'message'  => $apiMessage,
+                'code' => $apiCode,
+                'message' => $apiMessage,
             ]);
+
             throw new AlibabaApiException($apiMessage, 0, $apiCode);
         }
 

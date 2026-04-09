@@ -19,7 +19,8 @@ final class TaxonMenuExtension extends AbstractExtension
         private readonly TaxonRepositoryInterface $taxonRepository,
         private readonly ChannelContextInterface $channelContext,
         private readonly LocaleContextInterface $localeContext,
-    ) {}
+    ) {
+    }
 
     public function getFunctions(): array
     {

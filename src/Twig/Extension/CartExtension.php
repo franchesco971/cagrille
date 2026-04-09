@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Twig\Extension;
 
-use Sylius\Component\Order\Context\CartNotFoundException;
 use Sylius\Component\Order\Context\CartContextInterface;
+use Sylius\Component\Order\Context\CartNotFoundException;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
@@ -13,7 +13,8 @@ final class CartExtension extends AbstractExtension
 {
     public function __construct(
         private readonly CartContextInterface $cartContext,
-    ) {}
+    ) {
+    }
 
     public function getFunctions(): array
     {
@@ -27,6 +28,7 @@ final class CartExtension extends AbstractExtension
     {
         try {
             $cart = $this->cartContext->getCart();
+
             return $cart->getItems()->count();
         } catch (CartNotFoundException) {
             return 0;

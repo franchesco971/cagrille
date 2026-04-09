@@ -23,11 +23,11 @@ use Psr\Log\LoggerInterface;
  */
 class TokenRefreshService
 {
-    private const AUTH_URL = 'https://oauth.aliexpress-solution.com/oauth/authorize';
+    private const AUTH_URL = 'https://api-sg.aliexpress.com/rest';
 
-    private const TOKEN_CREATE_PATH = '/rest/auth/token/create';
+    private const TOKEN_CREATE_PATH = '/auth/token/create';
 
-    private const TOKEN_REFRESH_PATH = '/rest/auth/token/refresh';
+    private const TOKEN_REFRESH_PATH = '/auth/token/refresh';
 
     private readonly IopClient $iopClient;
 

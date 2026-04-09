@@ -14,7 +14,8 @@ use Cagrille\AlibabaBundle\Dto\TrackingDto;
  */
 class LogisticsEndpoint implements LogisticsEndpointInterface
 {
-    private const ENDPOINT_TRACK_ORDER  = '/alibaba.icbu.logistics.order.track';
+    private const ENDPOINT_TRACK_ORDER = '/alibaba.icbu.logistics.order.track';
+
     private const ENDPOINT_TRACK_NUMBER = '/alibaba.icbu.logistics.tracking';
 
     public function __construct(
@@ -35,7 +36,7 @@ class LogisticsEndpoint implements LogisticsEndpointInterface
     {
         $response = $this->client->get(self::ENDPOINT_TRACK_NUMBER, [
             'tracking_number' => $trackingNumber,
-            'carrier_code'    => $carrier,
+            'carrier_code' => $carrier,
         ]);
 
         return TrackingDto::fromApiResponse($response['result'] ?? $response);

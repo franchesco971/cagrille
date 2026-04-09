@@ -14,10 +14,10 @@ final class OrderRequestDto
      */
     public function __construct(
         public readonly string $supplierId,
-        public readonly array  $items,          // [['product_id' => '...', 'quantity' => 5], ...]
-        public readonly array  $shippingAddress,
-        public readonly string $shippingMethod  = 'standard',
-        public readonly string $buyerMessage    = '',
+        public readonly array $items,          // [['product_id' => '...', 'quantity' => 5], ...]
+        public readonly array $shippingAddress,
+        public readonly string $shippingMethod = 'standard',
+        public readonly string $buyerMessage = '',
     ) {
     }
 
@@ -27,11 +27,11 @@ final class OrderRequestDto
     public function toApiPayload(): array
     {
         return [
-            'supplier_id'      => $this->supplierId,
-            'product_items'    => $this->items,
+            'supplier_id' => $this->supplierId,
+            'product_items' => $this->items,
             'delivery_address' => $this->shippingAddress,
-            'shipping_method'  => $this->shippingMethod,
-            'buyer_message'    => $this->buyerMessage,
+            'shipping_method' => $this->shippingMethod,
+            'buyer_message' => $this->buyerMessage,
         ];
     }
 }

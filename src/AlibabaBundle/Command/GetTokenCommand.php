@@ -28,7 +28,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 )]
 class GetTokenCommand extends Command
 {
-    private const AUTH_URL  = 'https://auth.alibaba.com/oauth/authorize';
+    private const AUTH_URL = 'https://auth.alibaba.com/oauth/authorize';
+
     private const TOKEN_URL = 'https://openapi-api.alibaba.com/rest/auth/token/create';
 
     public function __construct(
@@ -48,18 +49,18 @@ class GetTokenCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $io   = new SymfonyStyle($input, $output);
+        $io = new SymfonyStyle($input, $output);
         /** @var string|null $code */
         $code = $input->getOption('code');
 
         if ($code === null) {
             // Étape 1 : afficher l'URL d'autorisation
             $authUrl = self::AUTH_URL . '?' . http_build_query([
-                'client_id'     => $this->appKey,
-                'redirect_uri'  => $this->redirectUri,
+                'client_id' => $this->appKey,
+                'redirect_uri' => $this->redirectUri,
                 'response_type' => 'code',
-                'view'          => 'web',
-                'sp'            => 'alibaba',
+                'view' => 'web',
+                'sp' => 'alibaba',
             ]);
 
             $io->title('Alibaba OAuth — Étape 1 : Autorisation');
@@ -85,10 +86,10 @@ class GetTokenCommand extends Command
         // https://openapi.alibaba.com/doc/api.htm#/api?cid=4&path=/auth/token/create
         $apiPath = '/auth/token/create';
         $params = [
-            'app_key'     => $this->appKey,
-            'timestamp'   => (string) (time() * 1000),
+            'app_key' => $this->appKey,
+            'timestamp' => (string) (time() * 1000),
             'sign_method' => 'sha256',
-            'code'        => $code,
+            'code' => $code,
         ];
 
         ksort($params);
@@ -103,13 +104,14 @@ class GetTokenCommand extends Command
         $params['sign'] = strtoupper(hash_hmac('sha256', $signStr, $this->appSecret));
 
         try {
-            $client   = new Client(['timeout' => 15]);
+            $client = new Client(['timeout' => 15]);
             $response = $client->post(self::TOKEN_URL, ['form_params' => $params]);
             /** @var array<string, mixed> $data */
-            $data     = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+            $data = json_decode((string) $response->getBody(), true, 512, \JSON_THROW_ON_ERROR);
 
             if (!isset($data['access_token'])) {
-                $io->error('Réponse inattendue : ' . json_encode($data, JSON_PRETTY_PRINT));
+                $io->error('Réponse inattendue : ' . json_encode($data, \JSON_PRETTY_PRINT));
+
                 return Command::FAILURE;
             }
 
@@ -126,12 +128,13 @@ class GetTokenCommand extends Command
 
             $io->note('Ajoutez cette ligne dans votre .env.local :');
             $io->writeln('ALIBABA_ACCESS_TOKEN=' . $str($data['access_token']));
-
         } catch (GuzzleException $e) {
             $io->error('Erreur HTTP : ' . $e->getMessage());
+
             return Command::FAILURE;
         } catch (\Throwable $e) {
             $io->error('Erreur : ' . $e->getMessage());
+
             return Command::FAILURE;
         }
 

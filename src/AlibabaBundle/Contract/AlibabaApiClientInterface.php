@@ -15,6 +15,7 @@ interface AlibabaApiClientInterface
      * Effectue une requête GET authentifiée vers l'API Alibaba.
      *
      * @throws \Cagrille\AlibabaBundle\Exception\AlibabaApiException
+     *
      * @phpstan-ignore missingType.iterableValue
      */
     public function get(string $endpoint, array $params = []): array;
@@ -23,6 +24,7 @@ interface AlibabaApiClientInterface
      * Effectue une requête POST authentifiée vers l'API Alibaba.
      *
      * @throws \Cagrille\AlibabaBundle\Exception\AlibabaApiException
+     *
      * @phpstan-ignore missingType.iterableValue
      */
     public function post(string $endpoint, array $payload = []): array;

@@ -16,7 +16,8 @@ use Cagrille\AlibabaBundle\Dto\ProductDto;
 class ProductEndpoint implements ProductEndpointInterface
 {
     private const ENDPOINT_SEARCH = '/alibaba/icbu/product/list';
-    private const ENDPOINT_GET    = '/icbu/product/get';
+
+    private const ENDPOINT_GET = '/icbu/product/get';
 
     public function __construct(
         private readonly AlibabaApiClientInterface $client,
@@ -26,16 +27,16 @@ class ProductEndpoint implements ProductEndpointInterface
     public function search(string $keyword, int $page = 1, int $pageSize = 20): array
     {
         $response = $this->client->get(self::ENDPOINT_SEARCH, [
-            'subject'   => $keyword,
-            'page_no'   => $page,
+            'subject' => $keyword,
+            'page_no' => $page,
             'page_size' => min($pageSize, 50),
         ]);
 
         $items = $response['result']['product_list'] ?? [];
 
         return array_map(
-            static fn(array $item) => ProductDto::fromApiResponse($item),
-            $items
+            static fn (array $item) => ProductDto::fromApiResponse($item),
+            $items,
         );
     }
 
@@ -54,16 +55,16 @@ class ProductEndpoint implements ProductEndpointInterface
     {
         $response = $this->client->get(self::ENDPOINT_SEARCH, [
             'category_id' => $categoryId,
-            'page_no'     => $page,
-            'page_size'   => min($pageSize, 50),
-            'language'    => 'ENGLISH',
+            'page_no' => $page,
+            'page_size' => min($pageSize, 50),
+            'language' => 'ENGLISH',
         ]);
 
         $items = $response['result']['product_list'] ?? [];
 
         return array_map(
-            static fn(array $item) => ProductDto::fromApiResponse($item),
-            $items
+            static fn (array $item) => ProductDto::fromApiResponse($item),
+            $items,
         );
     }
 }

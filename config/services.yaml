@@ -106,6 +106,10 @@ services:
             $appSecret: '%env(ALIEXPRESS_APP_SECRET)%'
             $baseUrl:   '%env(string:ALIEXPRESS_BASE_URL)%'
 
+    Cagrille\AliExpressBundle\Command\GetTokenCommand:
+        arguments:
+            $redirectUri: '%env(string:ALIEXPRESS_REDIRECT_URI)%'
+
     Cagrille\AliExpressBundle\Api\Endpoint\ProductEndpoint:
         arguments:
             $client: '@Cagrille\AliExpressBundle\Api\AliExpressApiClient'

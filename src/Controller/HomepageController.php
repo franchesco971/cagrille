@@ -21,24 +21,25 @@ final class HomepageController extends AbstractController
         private readonly ProductRepositoryInterface $productRepository,
         private readonly ChannelContextInterface $channelContext,
         private readonly LocaleContextInterface $localeContext,
-    ) {}
+    ) {
+    }
 
     #[Route('/_fragment/homepage/featured-products', name: 'cagrille_homepage_featured_products')]
     public function featuredProducts(): Response
     {
         /** @var ChannelInterface $channel */
         $channel = $this->channelContext->getChannel();
-        $locale  = $this->localeContext->getLocaleCode();
+        $locale = $this->localeContext->getLocaleCode();
 
         $products = $this->productRepository->findLatestByChannel($channel, $locale, 4);
 
-        $rootTaxon     = $channel->getMenuTaxon();
+        $rootTaxon = $channel->getMenuTaxon();
         $rootTaxonSlug = $rootTaxon?->getSlug();
 
         return $this->render(
             'bundles/SyliusShopBundle/homepage/_featured_products.html.twig',
             [
-                'products'       => $products,
+                'products' => $products,
                 'rootTaxonSlug' => $rootTaxonSlug,
             ],
         );

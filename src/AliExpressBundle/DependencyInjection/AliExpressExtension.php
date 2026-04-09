@@ -24,6 +24,7 @@ class AliExpressExtension extends Extension
         $container->setParameter('ali_express.app_key', $config['app_key']);
         $container->setParameter('ali_express.app_secret', $config['app_secret']);
         $container->setParameter('ali_express.access_token', $config['access_token']);
+        $container->setParameter('ali_express.redirect_uri', $config['redirect_uri']);
         $container->setParameter('ali_express.base_url', $config['base_url']);
         $container->setParameter('ali_express.timeout', $config['timeout']);
         $container->setParameter('ali_express.target_currency', $config['target_currency']);

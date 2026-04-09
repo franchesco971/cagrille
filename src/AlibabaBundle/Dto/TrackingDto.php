@@ -11,12 +11,12 @@ final class TrackingDto
 {
     /** @param TrackingEventDto[] $events */
     public function __construct(
-        public readonly string  $orderId,
-        public readonly string  $trackingNumber,
-        public readonly string  $carrier,
-        public readonly string  $status,
-        public readonly string  $currentLocation,
-        public readonly array   $events,
+        public readonly string $orderId,
+        public readonly string $trackingNumber,
+        public readonly string $carrier,
+        public readonly string $status,
+        public readonly string $currentLocation,
+        public readonly array $events,
         public readonly ?\DateTimeImmutable $estimatedDelivery,
     ) {
     }
@@ -27,12 +27,12 @@ final class TrackingDto
     public static function fromApiResponse(array $data): self
     {
         $events = array_map(
-            static fn(array $e) => new TrackingEventDto(
+            static fn (array $e) => new TrackingEventDto(
                 description: (string) ($e['description'] ?? ''),
                 location: (string) ($e['location'] ?? ''),
                 occurredAt: isset($e['time']) ? new \DateTimeImmutable($e['time']) : new \DateTimeImmutable(),
             ),
-            (array) ($data['events'] ?? [])
+            (array) ($data['events'] ?? []),
         );
 
         return new self(

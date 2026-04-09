@@ -31,7 +31,7 @@ class AlibabaExtension extends Extension
         $container->setParameter('alibaba.sync.batch_size', $config['sync']['batch_size']);
         $container->setParameter('alibaba.sync.categories', $config['sync']['categories']);
 
-        $loader = new YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
+        $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.yaml');
     }
 

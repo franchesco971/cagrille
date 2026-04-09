@@ -28,17 +28,17 @@ class SyliusProductPersistence implements ProductPersistenceInterface
      * @param ChannelRepositoryInterface<\Sylius\Component\Core\Model\ChannelInterface> $channelRepository
      */
     public function __construct(
-        private readonly ProductFactoryInterface  $productFactory,
-        private readonly FactoryInterface         $channelPricingFactory,
+        private readonly ProductFactoryInterface $productFactory,
+        private readonly FactoryInterface $channelPricingFactory,
         private readonly ChannelRepositoryInterface $channelRepository,
-        private readonly EntityManagerInterface   $entityManager,
-        private readonly LoggerInterface          $logger,
+        private readonly EntityManagerInterface $entityManager,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
     public function upsert(ProductDto $dto): void
     {
-        $code    = 'alibaba_' . $dto->alibabaId;
+        $code = 'alibaba_' . $dto->alibabaId;
         $product = $this->findOrCreate($code, $dto);
 
         $this->entityManager->persist($product);

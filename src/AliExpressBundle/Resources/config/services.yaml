@@ -9,11 +9,11 @@ services:
         arguments:
             $appKey:          '%ali_express.app_key%'
             $appSecret:       '%ali_express.app_secret%'
-            $accessToken:     '%ali_express.access_token%'
             $baseUrl:         '%ali_express.base_url%'
             $timeout:         '%ali_express.timeout%'
             $targetCurrency:  '%ali_express.target_currency%'
             $targetLanguage:  '%ali_express.target_language%'
+            $shipToCountry:   '%ali_express.ship_to_country%'
 
     Cagrille\AliExpressBundle\Contract\AliExpressApiClientInterface:
         alias: Cagrille\AliExpressBundle\Api\AliExpressApiClient
@@ -55,6 +55,10 @@ services:
     Cagrille\AliExpressBundle\Command\TrackOrderCommand: ~
     Cagrille\AliExpressBundle\Command\RetryFailedOrdersCommand: ~
     Cagrille\AliExpressBundle\Command\SyncShipmentsCommand: ~
+
+    Cagrille\AliExpressBundle\Command\GetTokenCommand:
+        arguments:
+            $redirectUri: '%ali_express.redirect_uri%'
 
     # ── Repository commandes AliExpress ───────────────────────────────────────
     Cagrille\AliExpressBundle\Repository\AliExpressOrderRepository: ~

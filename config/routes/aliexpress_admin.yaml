@@ -2,3 +2,8 @@ cagrille_admin_aliexpress:
     resource: '../../src/AliExpressBundle/Controller/Admin/'
     type: attribute
     prefix: '/%sylius_admin.path_name%'
+
+cagrille_aliexpress_public:
+    resource: '../../src/AliExpressBundle/Controller/'
+    type: attribute
+    exclude: '../../src/AliExpressBundle/Controller/Admin/'

@@ -41,7 +41,7 @@ class SyncProductsCommand extends Command
         $io->title('Synchronisation Alibaba → Sylius');
 
         /** @var string|null $productId */
-        $productId  = $input->getOption('product');
+        $productId = $input->getOption('product');
         /** @var string|null $categoryId */
         $categoryId = $input->getOption('category');
 
@@ -49,21 +49,23 @@ class SyncProductsCommand extends Command
             if ($productId !== null) {
                 $this->syncService->syncOne((string) $productId);
                 $io->success(sprintf('Produit %s synchronisé avec succès.', $productId));
+
                 return Command::SUCCESS;
             }
 
             if ($categoryId !== null) {
                 $count = $this->syncService->syncByCategory((string) $categoryId);
                 $io->success(sprintf('%d produits synchronisés depuis la catégorie %s.', $count, $categoryId));
+
                 return Command::SUCCESS;
             }
 
             $io->section('Synchronisation complète toutes catégories...');
             $count = $this->syncService->syncAll();
             $io->success(sprintf('Synchronisation complète : %d produits traités.', $count));
-
         } catch (\Throwable $e) {
             $io->error('Erreur lors de la synchronisation : ' . $e->getMessage());
+
             return Command::FAILURE;
         }
 

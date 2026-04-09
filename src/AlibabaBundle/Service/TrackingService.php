@@ -16,7 +16,7 @@ class TrackingService
 {
     public function __construct(
         private readonly LogisticsEndpointInterface $logisticsEndpoint,
-        private readonly LoggerInterface            $logger,
+        private readonly LoggerInterface $logger,
     ) {
     }
 

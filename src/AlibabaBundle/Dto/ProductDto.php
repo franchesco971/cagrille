@@ -18,13 +18,13 @@ final class ProductDto
         public readonly string $alibabaId,
         public readonly string $name,
         public readonly string $description,
-        public readonly float  $price,
+        public readonly float $price,
         public readonly string $currency,
-        public readonly int    $moq,           // Minimum Order Quantity
-        public readonly int    $stock,
+        public readonly int $moq,           // Minimum Order Quantity
+        public readonly int $stock,
         public readonly string $unit,
-        public readonly array  $images,        // URLs des images
-        public readonly array  $attributes,    // Caractéristiques techniques
+        public readonly array $images,        // URLs des images
+        public readonly array $attributes,    // Caractéristiques techniques
         public readonly string $categoryId,
         public readonly string $supplierId,
         public readonly string $supplierName,
@@ -40,11 +40,11 @@ final class ProductDto
      */
     public static function fromApiResponse(array $data): self
     {
-        $trade  = $data['wholesale_trade'] ?? [];
-        $sku    = $data['product_sku']['skus'][0] ?? [];
+        $trade = $data['wholesale_trade'] ?? [];
+        $sku = $data['product_sku']['skus'][0] ?? [];
 
         // Prix : wholesale_trade.price, sinon premier SKU bulk_discount_price
-        $price  = (float) ($trade['price'] ?? $sku['bulk_discount_prices'][0]['bulk_discount_price'] ?? 0.0);
+        $price = (float) ($trade['price'] ?? $sku['bulk_discount_prices'][0]['bulk_discount_price'] ?? 0.0);
 
         return new self(
             alibabaId:     (string) ($data['_alibaba_id'] ?? $data['product_id'] ?? $data['id'] ?? ''),
@@ -85,8 +85,8 @@ final class ProductDto
         }
 
         return array_map(
-            static fn(array|string $img) => is_array($img) ? ($img['url'] ?? '') : $img,
-            (array) $images
+            static fn (array|string $img) => is_array($img) ? ($img['url'] ?? '') : $img,
+            (array) $images,
         );
     }
 }

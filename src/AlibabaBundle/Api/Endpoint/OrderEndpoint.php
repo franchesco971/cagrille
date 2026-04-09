@@ -16,8 +16,11 @@ use Cagrille\AlibabaBundle\Dto\OrderRequestDto;
 class OrderEndpoint implements OrderEndpointInterface
 {
     private const ENDPOINT_CREATE = '/alibaba.icbu.order.create';
-    private const ENDPOINT_GET    = '/alibaba.icbu.order.get';
-    private const ENDPOINT_LIST   = '/alibaba.icbu.order.list';
+
+    private const ENDPOINT_GET = '/alibaba.icbu.order.get';
+
+    private const ENDPOINT_LIST = '/alibaba.icbu.order.list';
+
     private const ENDPOINT_CANCEL = '/alibaba.icbu.order.cancel';
 
     public function __construct(
@@ -47,7 +50,7 @@ class OrderEndpoint implements OrderEndpointInterface
     public function list(array $filters = [], int $page = 1, int $pageSize = 20): array
     {
         $params = array_merge($filters, [
-            'page_no'   => $page,
+            'page_no' => $page,
             'page_size' => min($pageSize, 50),
         ]);
 
@@ -56,8 +59,8 @@ class OrderEndpoint implements OrderEndpointInterface
         $orders = $response['result']['order_list'] ?? [];
 
         return array_map(
-            static fn(array $order) => OrderDto::fromApiResponse($order),
-            $orders
+            static fn (array $order) => OrderDto::fromApiResponse($order),
+            $orders,
         );
     }
 
@@ -65,7 +68,7 @@ class OrderEndpoint implements OrderEndpointInterface
     {
         $response = $this->client->post(self::ENDPOINT_CANCEL, [
             'order_id' => $orderId,
-            'reason'   => $reason,
+            'reason' => $reason,
         ]);
 
         return (bool) ($response['result']['success'] ?? false);

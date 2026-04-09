@@ -18,6 +18,7 @@ interface ProductEndpointInterface
      * @param string $keyword   Mot-clé de recherche
      * @param int    $page      Numéro de page (pagination)
      * @param int    $pageSize  Nombre de résultats par page
+     *
      * @return ProductDto[]
      */
     public function search(string $keyword, int $page = 1, int $pageSize = 20): array;

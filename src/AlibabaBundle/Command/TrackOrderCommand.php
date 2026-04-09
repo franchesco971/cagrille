@@ -40,13 +40,13 @@ class TrackOrderCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $io      = new SymfonyStyle($input, $output);
-        $rawOrderId  = $input->getArgument('order_id');
+        $io = new SymfonyStyle($input, $output);
+        $rawOrderId = $input->getArgument('order_id');
         $orderId = is_string($rawOrderId) ? $rawOrderId : null;
         $rawTracking = $input->getOption('tracking');
-        $rawCarrier  = $input->getOption('carrier');
+        $rawCarrier = $input->getOption('carrier');
         $tracking = is_string($rawTracking) ? $rawTracking : null;
-        $carrier  = is_string($rawCarrier)  ? $rawCarrier  : null;
+        $carrier = is_string($rawCarrier) ? $rawCarrier : null;
 
         try {
             if ($tracking !== null && $carrier !== null) {
@@ -55,6 +55,7 @@ class TrackOrderCommand extends Command
                 $trackingDto = $this->trackingService->getTrackingForOrder((string) $orderId);
             } else {
                 $io->error('Fournir un order_id ou --tracking + --carrier');
+
                 return Command::FAILURE;
             }
 
@@ -76,9 +77,9 @@ class TrackOrderCommand extends Command
                     $event->description,
                 ));
             }
-
         } catch (\Throwable $e) {
             $io->error('Erreur : ' . $e->getMessage());
+
             return Command::FAILURE;
         }
 
