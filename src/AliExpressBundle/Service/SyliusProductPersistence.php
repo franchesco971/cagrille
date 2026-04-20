@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cagrille\AliExpressBundle\Service;
 
 use App\Entity\Product\ProductImage;
+use App\Entity\Product\ProductVariant as AppProductVariant;
 use Cagrille\AliExpressBundle\Contract\ProductPersistenceInterface;
 use Cagrille\AliExpressBundle\Dto\ProductDto;
 use Cagrille\AliExpressBundle\Dto\SkuDto;
@@ -224,6 +225,15 @@ class SyliusProductPersistence implements ProductPersistenceInterface
             }
         }
 
+        // Stocke le skuAttr au format AliExpress : "propertyId:valueId;propertyId:valueId"
+        if ($variant instanceof AppProductVariant) {
+            $skuAttr = implode(';', array_map(
+                static fn (array $p): string => $p['propertyId'] . ':' . $p['valueId'],
+                $skuDto->properties,
+            ));
+            $variant->setAliExpressSkuAttr($skuAttr);
+        }
+
         $this->applyChannelPricing($variant, $skuDto->offerSalePrice, $skuDto->skuPrice);
     }
 
@@ -310,13 +320,17 @@ class SyliusProductPersistence implements ProductPersistenceInterface
             $optionValue = $this->productOptionValueFactory->createNew();
             $optionValue->setCode($valueCode);
             $optionValue->setOption($option);
-            $optionValue->setCurrentLocale('fr_FR');
-            $optionValue->setFallbackLocale('fr_FR');
-
-            $valueName = $prop['valueName'] !== '' ? $prop['valueName'] : $valueCode;
-            $optionValue->setValue($valueName);
-
             $this->entityManager->persist($optionValue);
+        }
+
+        // Initialise ou met à jour les traductions fr_FR et en_US
+        // Les deux locales reçoivent la même valeur : property_value_definition_name
+        $valueName = $prop['valueName'] !== '' ? $prop['valueName'] : $valueCode;
+        $optionValue->setFallbackLocale('fr_FR');
+
+        foreach (['fr_FR', 'en_US'] as $locale) {
+            $optionValue->setCurrentLocale($locale);
+            $optionValue->setValue($valueName);
         }
 
         return $optionValue;
@@ -347,11 +361,16 @@ class SyliusProductPersistence implements ProductPersistenceInterface
             /** @var ProductOptionInterface $option */
             $option = $this->productOptionFactory->createNew();
             $option->setCode($code);
-            $option->setCurrentLocale('fr_FR');
-            $option->setFallbackLocale('fr_FR');
-            $option->setName($name !== '' ? $name : $code);
-
             $this->entityManager->persist($option);
+        }
+
+        // Initialise ou met à jour les traductions fr_FR et en_US
+        $optionName = $name !== '' ? $name : $code;
+        $option->setFallbackLocale('fr_FR');
+
+        foreach (['fr_FR', 'en_US'] as $locale) {
+            $option->setCurrentLocale($locale);
+            $option->setName($optionName);
         }
 
         if (!$product->hasOption($option)) {

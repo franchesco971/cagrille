@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cagrille\AliExpressBundle\Service;
 
+use App\Entity\Product\ProductVariant as AppProductVariant;
 use Cagrille\AliExpressBundle\Contract\AliExpressOrderPlacementServiceInterface;
 use Cagrille\AliExpressBundle\Contract\AliExpressOrderRepositoryInterface;
 use Cagrille\AliExpressBundle\Contract\OrderEndpointInterface;
@@ -60,9 +61,9 @@ final class AliExpressOrderPlacementService implements AliExpressOrderPlacementS
         $collected = [];
 
         foreach ($order->getItems() as $item) {
-            $aliExpressProductId = $this->extractAliExpressProductId($item);
+            $aliExpressInfo = $this->extractAliExpressInfo($item);
 
-            if ($aliExpressProductId === null) {
+            if ($aliExpressInfo === null) {
                 continue;
             }
 
@@ -75,8 +76,9 @@ final class AliExpressOrderPlacementService implements AliExpressOrderPlacementS
             $aliOrder = new AliExpressOrder(
                 syliusOrderId:       (int) $orderId,
                 syliusOrderItemId:   (int) $itemId,
-                aliExpressProductId: $aliExpressProductId,
+                aliExpressProductId: $aliExpressInfo['productId'],
                 quantity:            $item->getQuantity(),
+                skuAttr:             $aliExpressInfo['skuAttr'],
             );
 
             $this->orderRepository->save($aliOrder, flush: false);
@@ -84,9 +86,9 @@ final class AliExpressOrderPlacementService implements AliExpressOrderPlacementS
             $collected[] = [
                 'aliOrder' => $aliOrder,
                 'itemDto' => new OrderItemDto(
-                    productId: $aliExpressProductId,
+                    productId: $aliExpressInfo['productId'],
                     quantity:  $item->getQuantity(),
-                    skuAttr:   $aliOrder->getSkuAttr(),
+                    skuAttr:   $aliExpressInfo['skuAttr'],
                 ),
             ];
         }
@@ -131,7 +133,13 @@ final class AliExpressOrderPlacementService implements AliExpressOrderPlacementS
 
     // ── Privé ────────────────────────────────────────────────────────────────
 
-    private function extractAliExpressProductId(OrderItemInterface $item): ?string
+    /**
+     * Extrait le productId AliExpress et le skuAttr depuis un OrderItem Sylius.
+     * Retourne null si l'item n'est pas un produit AliExpress.
+     *
+     * @return array{productId: string, skuAttr: string}|null
+     */
+    private function extractAliExpressInfo(OrderItemInterface $item): ?array
     {
         $variant = $item->getVariant();
 
@@ -145,11 +153,18 @@ final class AliExpressOrderPlacementService implements AliExpressOrderPlacementS
             return null;
         }
 
-        // Code format : aliexpress_<productId>_default  (ou aliexpress_<productId>)
+        // Code format : aliexpress_<productId>_sku_<skuId>  ou  aliexpress_<productId>_default
         $withoutPrefix = substr($variantCode, strlen(self::ALIEXPRESS_PRODUCT_PREFIX));
         $parts = explode('_', $withoutPrefix);
+        $productId = $parts[0] !== '' ? $parts[0] : null;
 
-        return $parts[0] !== '' ? $parts[0] : null;
+        if ($productId === null) {
+            return null;
+        }
+
+        $skuAttr = $variant instanceof AppProductVariant ? $variant->getAliExpressSkuAttr() : '';
+
+        return ['productId' => $productId, 'skuAttr' => $skuAttr];
     }
 
     /**

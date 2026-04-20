@@ -16,6 +16,24 @@ class ProductVariant extends BaseProductVariant implements ProductVariantInterfa
 {
     use RecurringProductVariantTrait;
 
+    /**
+     * Attributs SKU AliExpress au format "propertyId:valueId;propertyId:valueId".
+     * Utilisé lors du placement de commande dropship pour identifier le variant commandé.
+     * Vide pour les produits non-AliExpress.
+     */
+    #[ORM\Column(name: 'aliexpress_sku_attr', type: 'string', length: 512, nullable: true, options: ['default' => null])]
+    private ?string $aliExpressSkuAttr = null;
+
+    public function getAliExpressSkuAttr(): string
+    {
+        return $this->aliExpressSkuAttr ?? '';
+    }
+
+    public function setAliExpressSkuAttr(string $skuAttr): void
+    {
+        $this->aliExpressSkuAttr = $skuAttr !== '' ? $skuAttr : null;
+    }
+
     protected function createTranslation(): ProductVariantTranslationInterface
     {
         return new ProductVariantTranslation();
