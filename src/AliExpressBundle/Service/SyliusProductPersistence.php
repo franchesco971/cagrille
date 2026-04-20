@@ -48,6 +48,14 @@ use Symfony\Component\HttpFoundation\File\File;
 class SyliusProductPersistence implements ProductPersistenceInterface
 {
     /**
+     * Cache des ProductOptionValue créées/trouvées pendant le upsert en cours.
+     * Évite les doublons quand deux SKUs partagent la même valeur avant le flush().
+     *
+     * @var array<string, ProductOptionValueInterface>
+     */
+    private array $pendingOptionValues = [];
+
+    /**
      * @param ProductFactoryInterface<\Sylius\Component\Core\Model\ProductInterface> $productFactory
      * @param ChannelRepositoryInterface<\Sylius\Component\Core\Model\ChannelInterface> $channelRepository
      */
@@ -67,6 +75,7 @@ class SyliusProductPersistence implements ProductPersistenceInterface
 
     public function upsert(ProductDto $dto): void
     {
+        $this->pendingOptionValues = [];
         $code = 'aliexpress_' . $dto->aliExpressId;
         $product = $this->findOrCreate($code, $dto);
 
@@ -302,14 +311,21 @@ class SyliusProductPersistence implements ProductPersistenceInterface
 
         $option = $this->findOrCreateOption($product, $optionCode, $prop['propertyName']);
 
-        // Chercher dans les valeurs déjà liées à l'option
+        // 1. Cache in-process (entités créées dans ce upsert mais pas encore flushées)
+        if (isset($this->pendingOptionValues[$valueCode])) {
+            return $this->pendingOptionValues[$valueCode];
+        }
+
+        // 2. Chercher dans les valeurs déjà liées à l'option
         foreach ($option->getValues() as $existing) {
             if ($existing->getCode() === $valueCode) {
+                $this->pendingOptionValues[$valueCode] = $existing;
+
                 return $existing;
             }
         }
 
-        // Chercher en base (valeur d'un autre produit partageant la même option)
+        // 3. Chercher en base (valeur d'un autre produit partageant la même option)
         /** @var ProductOptionValueInterface|null $optionValue */
         $optionValue = $this->entityManager
             ->getRepository(ProductOptionValueInterface::class)
@@ -322,6 +338,8 @@ class SyliusProductPersistence implements ProductPersistenceInterface
             $optionValue->setOption($option);
             $this->entityManager->persist($optionValue);
         }
+
+        $this->pendingOptionValues[$valueCode] = $optionValue;
 
         // Initialise ou met à jour les traductions fr_FR et en_US
         // Les deux locales reçoivent la même valeur : property_value_definition_name
