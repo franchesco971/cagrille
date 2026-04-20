@@ -1,8 +1,8 @@
 # AliExpressBundle — Dropshipping AliExpress pour Cagrille
 
 Bundle Symfony/Sylius dédié à l'intégration de **l'API AliExpress Open Platform (DS)**
-pour automatiser le dropshipping : import de produits, passage de commandes groupées
-et suivi logistique avec notification email automatique.
+pour automatiser le dropshipping : import de produits avec génération des variants SKU,
+passage de commandes groupées et suivi logistique avec notification email automatique.
 
 ---
 
@@ -17,8 +17,9 @@ et suivi logistique avec notification email automatique.
 7. [Flux d'une commande dropship](#flux-dune-commande-dropship)
 8. [Suivi de livraison & notification client](#suivi-de-livraison--notification-client)
 9. [Connexion Sylius](#connexion-sylius)
-10. [Étendre le bundle](#étendre-le-bundle)
-11. [Principes de conception](#principes-de-conception)
+10. [Tarification canal](#tarification-canal)
+11. [Étendre le bundle](#étendre-le-bundle)
+12. [Principes de conception](#principes-de-conception)
 
 ---
 
@@ -29,14 +30,13 @@ src/AliExpressBundle/
 ├── AliExpressBundle.php
 ├── Api/
 │   ├── AliExpressApiClient.php           # Client HTTP HMAC-SHA256
+│   ├── TokenRefreshService.php           # Échange de code OAuth / refresh token
+│   ├── TokenStorage.php                  # Stockage token JSON (var/aliexpress_token.json)
 │   └── Endpoint/
 │       ├── ProductEndpoint.php           # Recherche & détail produits
 │       ├── OrderEndpoint.php             # Création commande groupée
 │       ├── MockOrderEndpoint.php         # Mock dev (sans appel API réel)
 │       └── LogisticsEndpoint.php         # Suivi colis
-├── Api/
-│   ├── TokenRefreshService.php           # Échange de code OAuth / refresh token
-│   └── TokenStorage.php                  # Stockage token JSON (var/aliexpress_token.json)
 ├── Command/
 │   ├── SyncProductsCommand.php           # aliexpress:sync:products
 │   ├── SyncShipmentsCommand.php          # aliexpress:shipment:sync
@@ -57,11 +57,14 @@ src/AliExpressBundle/
 ├── Controller/
 │   ├── AliExpressOAuthCallbackController.php  # GET /aliexpress/callback
 │   └── Admin/
-├── Dto/
-│   ├── ProductDto.php
+│       ├── AliExpressSyncController.php       # Import produits + OAuth admin
+│       └── AliExpressOrderController.php
+├── Dto/                                  # Objets de transfert (immutables)
+│   ├── ProductDto.php                    # Produit complet (+ liste de SkuDto)
+│   ├── SkuDto.php                        # Variant SKU (prix, options)
 │   ├── OrderDto.php
-│   ├── OrderItemDto.php                  # Item individuel dans une commande groupée
-│   ├── OrderRequestDto.php               # Requête de commande groupée (items[])
+│   ├── OrderItemDto.php
+│   ├── OrderRequestDto.php
 │   ├── TrackingDto.php
 │   └── TrackingEventDto.php
 ├── Entity/
@@ -78,9 +81,44 @@ src/AliExpressBundle/
 └── Service/
     ├── AliExpressOrderPlacementService.php  # Placement commande groupée
     ├── AliExpressShipmentSyncService.php    # Sync tracking + email client
+    ├── ChannelPricingCalculator.php         # Formule de tarification canal
     ├── NullProductPersistence.php           # Null Object
-    ├── SyliusProductPersistence.php
-    └── ProductSyncService.php
+    ├── SyliusProductPersistence.php         # Persistance réelle Sylius
+    └── ProductSyncService.php               # Orchestration de la sync
+```
+
+### Flux de données (sync produits)
+
+```
+CLI / Admin
+     │
+     ▼
+SyncProductsCommand / AliExpressSyncController
+     │
+     ▼
+ProductSyncService          ← ProductSyncServiceInterface
+     │  pagine les résultats
+     ▼
+ProductEndpoint             ← ProductEndpointInterface
+     │  aliexpress.ds.product.get
+     │  aliexpress.affiliate.product.query
+     ▼
+AliExpressApiClient         ← AliExpressApiClientInterface
+     │  POST /sync (HMAC-SHA256)
+     ▼
+API AliExpress Open Platform
+     │
+     ▼
+ProductDto (immutable)
+     │  └── SkuDto[] — un par ae_item_sku_info_d_t_o
+     ▼
+SyliusProductPersistence    ← ProductPersistenceInterface
+     │  upsert (create/update)
+     │  ├── ProductVariant par SKU  → code : aliexpress_<id>_sku_<skuId>
+     │  ├── ProductOption / ProductOptionValue (réutilisés entre produits)
+     │  └── ChannelPricing calculé via ChannelPricingCalculator
+     ▼
+Catalogue Sylius
 ```
 
 ---
@@ -96,6 +134,8 @@ via `config/services.yaml`.
 
 Copier dans `.env.local` et renseigner les vraies valeurs :
 
+### Connexion API
+
 | Variable | Description | Défaut |
 |---|---|---|
 | `ALIEXPRESS_APP_KEY` | Clé d'application AliExpress | — |
@@ -108,7 +148,17 @@ Copier dans `.env.local` et renseigner les vraies valeurs :
 | `ALIEXPRESS_SHIP_TO_COUNTRY` | Pays de livraison | `FR` |
 | `ALIEXPRESS_SYNC_KEYWORDS` | Mots-clés de sync (JSON) | `["barbecue","grill","bbq accessories"]` |
 | `ALIEXPRESS_SYNC_BATCH_SIZE` | Produits par page | `20` |
-| `ALIEXPRESS_REDIRECT_URI` | URL de callback OAuth enregistrée chez AliExpress | `https://cagrille.fr/aliexpress/callback` |
+| `ALIEXPRESS_REDIRECT_URI` | URL de callback OAuth | `https://cagrille.fr/aliexpress/callback` |
+
+### Tarification canal
+
+| Variable | Description | Défaut |
+|---|---|---|
+| `ALIEXPRESS_PRICING_ADVERTISING_RATE` | Coût publicitaire (% du PDD) | `0.01` (1 %) |
+| `ALIEXPRESS_PRICING_PAYMENT_RATE` | Frais de paiement variables (% du PDD) | `0.012` (1,2 %) |
+| `ALIEXPRESS_PRICING_PAYMENT_FIXED` | Frais de paiement fixes (€) | `0.10` |
+| `ALIEXPRESS_PRICING_TAX_RATE` | Taux de taxes (% du PDD) | `0.128` (12,8 %) |
+| `ALIEXPRESS_PRICING_MARGIN_RATE` | Marge (% du PDD) | `0.10` (10 %) |
 
 **Obtenir les credentials :** https://developers.aliexpress-solution.com
 
@@ -137,9 +187,7 @@ https://cagrille.fr/aliexpress/callback?code=3_529794_XXXX
 ```
 
 Si vous êtes connecté à l'admin Sylius, le **callback est automatiquement géré** :
-le code est échangé et le token sauvegardé. Vous êtes redirigé vers le panneau admin.
-
-Sinon (hors navigateur / SSH), copiez le `code` et relancez :
+le code est échangé et le token sauvegardé. Sinon, copiez le `code` et relancez :
 
 ```bash
 # Étape 2 : échange du code
@@ -148,8 +196,6 @@ docker compose run --rm php bin/console aliexpress:auth:token --code=3_529794_XX
 
 ### Comportement automatique de la commande
 
-Sans option, la commande détecte l'état du token et agit automatiquement :
-
 | État du token | Action |
 |---|---|
 | Absent | Affiche l'URL OAuth (étape 1) |
@@ -157,31 +203,12 @@ Sans option, la commande détecte l'état du token et agit automatiquement :
 | Expiré + `refresh_token` disponible | **Rafraîchit automatiquement** |
 | Expiré + pas de `refresh_token` | Affiche l'URL OAuth |
 
-```bash
-# Maintenance courante (idéal pour un cron)
-docker compose run --rm php bin/console aliexpress:auth:token
-```
-
 ### Options disponibles
 
 ```bash
 --code=XXX    # Échange manuellement un code de callback
 --status      # Affiche access_token, refresh_token, date d'expiration
 --refresh     # Force le renouvellement via le refresh_token
-```
-
-### Callback HTTP automatique (via navigateur)
-
-Quand un administrateur Sylius ouvre l'URL OAuth dans son navigateur,
-AliExpress redirige vers `https://cagrille.fr/aliexpress/callback?code=XXX`.
-Le contrôleur `AliExpressOAuthCallbackController` capture ce code,
-échange le token et redirige vers le panneau admin sans aucune action manuelle.
-
-### Maintenance du token (cron)
-
-```cron
-# Vérification / refresh automatique toutes les heures
-0 * * * *  www-data  cd /var/www/cagrille && docker compose exec -T php bin/console aliexpress:auth:token
 ```
 
 ---
@@ -201,14 +228,10 @@ docker compose run --rm php bin/console aliexpress:sync:products --keyword=barbe
 docker compose run --rm php bin/console aliexpress:sync:products --item=1005010455068176
 ```
 
-> **Note :** ne pas confondre avec `alibaba:sync:products` (Alibaba.com ICBU).
-> Les IDs AliExpress (ex. `1005010455068176`) ne sont pas valides pour Alibaba.
+> Pour chaque produit importé, **tous ses variants SKU sont créés ou mis à jour**
+> (voir [Connexion Sylius — Variants](#variants)).
 
 ### Synchroniser le suivi de livraison
-
-Récupère le numéro de suivi depuis l'API AliExpress pour toutes les commandes
-placées en attente de tracking. **Envoie automatiquement un email au client**
-lors de la première apparition d'un numéro de suivi.
 
 ```bash
 docker compose run --rm php bin/console aliexpress:shipment:sync
@@ -238,12 +261,7 @@ make retry-orders     # Lance aliexpress:orders:retry
 make stan             # Analyse PHPStan niveau 9
 ```
 
-> Pour la gestion du token OAuth, utiliser directement `bin/console aliexpress:auth:token`
-> (voir section [OAuth — Obtenir un token](#oauth--obtenir-un-token)).
-
 ### Planification automatique (production)
-
-Ajouter dans le crontab serveur pour maintenir le suivi à jour :
 
 ```cron
 # Sync tracking toutes les heures
@@ -251,6 +269,9 @@ Ajouter dans le crontab serveur pour maintenir le suivi à jour :
 
 # Retry des commandes échouées toutes les 4 heures
 0 */4 * * *  www-data  cd /var/www/cagrille && docker compose exec -T php bin/console aliexpress:orders:retry
+
+# Maintenance du token OAuth
+0 * * * *  www-data  cd /var/www/cagrille && docker compose exec -T php bin/console aliexpress:auth:token
 ```
 
 ---
@@ -264,30 +285,19 @@ Client paie sur Sylius
 workflow.sylius_order_payment.completed.pay
         │
         ▼
-OrderPaymentCompletedListener  (#[AsEventListener], priorité 50)
+OrderPaymentCompletedListener  (#[AsEventListener])
         │
         ▼
 AliExpressOrderPlacementService::placeForOrder()
+        │  — détecte les variants préfixés aliexpress_
         │  — crée une AliExpressOrder par article AliExpress du panier
-        │  — flush batch (1 requête DB)
-        │  — 1 seul appel API groupé (tous les articles en une fois)
+        │  — 1 seul appel API groupé
         ▼
 OrderEndpoint::create()  →  API AliExpress DS
         │
         ▼
 AliExpressOrder::markAsPlaced()  →  status = placed
 ```
-
-### Codes produits
-
-Les variantes AliExpress ont le code `aliexpress_<item_id>_default`.
-Le service de placement les détecte via le préfixe `aliexpress_`.
-Les produits Alibaba (`alibaba_<id>`) et manuels sont ignorés.
-
-### Commandes groupées
-
-Tous les articles AliExpress d'un même panier sont regroupés en **un seul appel API**.
-Le montant total est réparti équitablement entre chaque `AliExpressOrder`.
 
 ---
 
@@ -297,42 +307,90 @@ Le montant total est réparti équitablement entre chaque `AliExpressOrder`.
 Cron / make sync-tracking
         │
         ▼
-aliexpress:shipment:sync
-        │
-        ▼
 AliExpressShipmentSyncService::syncAllPendingTracking()
-        │  — commandes "placed" sans tracking
-        │  — commandes "shipped" (pour détecter la livraison)
+        │
         ▼
 LogisticsEndpoint::getTracking()  →  aliexpress.ds.trade.order.logistics.get
         │
         ├─ tracking apparu pour la 1ère fois ?
-        │       └─ ShipmentEmailManagerInterface::sendConfirmationEmail()
-        │              → email Sylius standard "Votre commande est expédiée"
-        │              → numéro de suivi inclus dans l'email
+        │       └─ email "Votre commande est expédiée" (numéro de suivi inclus)
         │
         ├─ status = FINISH → AliExpressOrder::markAsDelivered()
         └─ sinon → AliExpressOrder::markAsShipped() + Shipment Sylius mis à jour
 ```
 
-L'email est envoyé **une seule fois** : à la première détection d'un numéro de suivi.
-Un échec d'envoi email est loggué en `warning` mais ne bloque pas la synchronisation.
-
 ---
 
 ## Connexion Sylius
 
-Les produits sont créés avec le code `aliexpress_<item_id>` (produit) et
-`aliexpress_<item_id>_default` (variante). La persistance est active par défaut
-via `SyliusProductPersistence`.
+### Produit
 
-Pour désactiver temporairement (tests) :
+Code Sylius : `aliexpress_<item_id>`. Ce préfixe distingue les produits AliExpress
+des produits Alibaba (`alibaba_<id>`) et des produits manuels.
+
+### Variants
+
+Pour chaque SKU retourné dans `ae_item_sku_info_dtos.ae_item_sku_info_d_t_o` :
+
+| Élément Sylius | Valeur |
+|---|---|
+| Code variant | `aliexpress_<item_id>_sku_<skuId>` |
+| Suivi de stock | **désactivé** (`setTracked(false)`) |
+| Catégorie de taxe | première catégorie trouvée en base |
+| Options produit | créées depuis les propriétés SKU (ex. Couleur, Taille) |
+| Libellé de valeur | `property_value_definition_name` (traduction FR fournie par l'API) |
+
+Si l'API ne retourne pas de SKU (cas *affiliate search*), un seul variant par défaut
+est créé avec le code `aliexpress_<item_id>_default`.
+
+### Options et valeurs produit
+
+Les `ProductOption` sont partagées entre tous les produits (réutilisées si elles
+existent déjà en base) :
+
+| Élément | Code Sylius |
+|---|---|
+| ProductOption | `aliexpress_prop_<propertyId>` |
+| ProductOptionValue | `aliexpress_propval_<propertyId>_<valueId>` |
+
+### Désactiver la persistance (tests)
 
 ```yaml
 # config/services.yaml
 Cagrille\AliExpressBundle\Contract\ProductPersistenceInterface:
     alias: Cagrille\AliExpressBundle\Service\NullProductPersistence
 ```
+
+---
+
+## Tarification canal
+
+Le prix de chaque variant est calculé par `ChannelPricingCalculator` selon la
+formule suivante :
+
+```
+cp    = pdd × ALIEXPRESS_PRICING_ADVERTISING_RATE
+fdp   = pdd × ALIEXPRESS_PRICING_PAYMENT_RATE + ALIEXPRESS_PRICING_PAYMENT_FIXED
+taxes = pdd × ALIEXPRESS_PRICING_TAX_RATE
+marge = pdd × ALIEXPRESS_PRICING_MARGIN_RATE
+prix  = pdd + cp + fdp + taxes + marge
+```
+
+Où `pdd` (prix de départ) correspond à `offer_sale_price` du SKU pour le **prix
+de vente**, et à `sku_price` pour le **prix barré** (`originalPrice`).
+
+Les cinq pourcentages sont des variables d'environnement et peuvent être ajustés
+sans rechargement du code.
+
+#### Exemple (pdd = 20,00 €)
+
+| Composante | Calcul | Montant |
+|---|---|---|
+| Coût pub (cp) | 20 × 1 % | 0,20 € |
+| Frais paiement (fdp) | 20 × 1,2 % + 0,10 | 0,34 € |
+| Taxes | 20 × 12,8 % | 2,56 € |
+| Marge | 20 × 10 % | 2,00 € |
+| **Prix final** | 20 + 0,20 + 0,34 + 2,56 + 2,00 | **25,10 €** |
 
 ---
 
@@ -351,12 +409,16 @@ class MyCustomPersistence implements ProductPersistenceInterface
 }
 ```
 
-Puis dans `config/services.yaml` :
-
 ```yaml
+# config/services.yaml
 Cagrille\AliExpressBundle\Contract\ProductPersistenceInterface:
     alias: App\Service\MyCustomPersistence
 ```
+
+### Ajuster la formule de tarification
+
+Il suffit de modifier les variables d'environnement dans `.env.local` —
+aucun changement de code n'est nécessaire.
 
 ---
 
@@ -364,241 +426,9 @@ Cagrille\AliExpressBundle\Contract\ProductPersistenceInterface:
 
 | Principe | Application |
 |---|---|
-| **SRP** | Client HTTP ≠ Endpoints ≠ Services métier ≠ Persistance |
+| **SRP** | Client HTTP ≠ Endpoints ≠ Services métier ≠ Persistance ≠ Calculateur prix |
 | **DIP** | Tous les services dépendent d'interfaces, jamais des classes concrètes |
-| **OCP** | Persistance, endpoint et placement swappables sans modifier les services |
+| **OCP** | Persistance, endpoint, placement et tarification swappables |
 | **Null Object** | `NullProductPersistence`, `MockOrderEndpoint` — pas de mock en test |
 | **Batch groupé** | Un seul appel API par commande, quel que soit le nombre d'articles |
-| **Token auto** | `TokenStorage` + `TokenRefreshService` — refresh transparent avant expiration |
-
-
-Bundle Symfony/Sylius dédié à l'intégration de **l'API AliExpress Open Platform (DS)**
-pour automatiser le dropshipping : import de produits, passage de commandes et suivi logistique.
-
----
-
-## Sommaire
-
-1. [Architecture](#architecture)
-2. [Installation & configuration](#installation--configuration)
-3. [Variables d'environnement](#variables-denvironnement)
-4. [Commandes CLI](#commandes-cli)
-5. [Connexion Sylius](#connexion-sylius)
-6. [Étendre le bundle](#étendre-le-bundle)
-7. [Principes de conception](#principes-de-conception)
-
----
-
-## Architecture
-
-```
-src/AliExpressBundle/
-├── AliExpressBundle.php                  # Point d'entrée du bundle
-├── Api/
-│   ├── AliExpressApiClient.php           # Client HTTP HMAC-SHA256
-│   └── Endpoint/
-│       ├── ProductEndpoint.php           # Recherche & détail produits
-│       ├── OrderEndpoint.php             # Création & consultation commandes
-│       └── LogisticsEndpoint.php         # Suivi colis
-├── Command/
-│   ├── SyncProductsCommand.php           # aliexpress:sync:products
-│   └── TrackOrderCommand.php             # aliexpress:order:track
-├── Contract/                             # Interfaces (DIP)
-│   ├── AliExpressApiClientInterface.php
-│   ├── ProductEndpointInterface.php
-│   ├── OrderEndpointInterface.php
-│   ├── LogisticsEndpointInterface.php
-│   ├── ProductPersistenceInterface.php
-│   └── ProductSyncServiceInterface.php
-├── DependencyInjection/
-│   ├── AliExpressExtension.php
-│   └── Configuration.php
-├── Dto/                                  # Objets de transfert (immutables)
-│   ├── ProductDto.php
-│   ├── OrderDto.php
-│   ├── OrderRequestDto.php
-│   ├── TrackingDto.php
-│   └── TrackingEventDto.php
-├── Exception/
-│   └── AliExpressApiException.php
-├── Resources/config/
-│   └── services.yaml
-└── Service/
-    ├── NullProductPersistence.php        # Null Object (tests/dev)
-    ├── SyliusProductPersistence.php      # Persistance réelle Sylius
-    └── ProductSyncService.php            # Orchestration de la sync
-```
-
-### Flux de données
-
-```
-CLI / Scheduler
-     │
-     ▼
-SyncProductsCommand
-     │
-     ▼
-ProductSyncService          ← ProductSyncServiceInterface
-     │  pagine les résultats
-     ▼
-ProductEndpoint             ← ProductEndpointInterface
-     │  aliexpress.ds.product.get
-     │  aliexpress.affiliate.product.query
-     ▼
-AliExpressApiClient         ← AliExpressApiClientInterface
-     │  POST /sync (HMAC-SHA256)
-     ▼
-API AliExpress Open Platform
-     │
-     ▼
-ProductDto (immutable)
-     │
-     ▼
-SyliusProductPersistence    ← ProductPersistenceInterface
-     │  upsert (create/update)
-     ▼
-Catalogue Sylius (code préfixe : aliexpress_<item_id>)
-```
-
----
-
-## Installation & configuration
-
-Le bundle est déjà intégré au projet. Il est chargé via `config/services.yaml`
-(même pattern que l'AlibabaBundle — pas besoin de `bundles.php`).
-
----
-
-## Variables d'environnement
-
-Copier les variables dans `.env.local` et renseigner les vraies valeurs :
-
-| Variable | Description | Défaut |
-|---|---|---|
-| `ALIEXPRESS_APP_KEY` | Clé d'application AliExpress | — |
-| `ALIEXPRESS_APP_SECRET` | Secret d'application | — |
-| `ALIEXPRESS_ACCESS_TOKEN` | Token OAuth (session) | — |
-| `ALIEXPRESS_BASE_URL` | URL de base de l'API | `https://api-sg.aliexpress.com` |
-| `ALIEXPRESS_TIMEOUT` | Timeout HTTP (secondes) | `30` |
-| `ALIEXPRESS_TARGET_CURRENCY` | Devise du prix affiché | `EUR` |
-| `ALIEXPRESS_TARGET_LANGUAGE` | Langue des descriptions | `fr` |
-| `ALIEXPRESS_SYNC_KEYWORDS` | Mots-clés de sync (JSON) | `["barbecue","grill","bbq accessories"]` |
-| `ALIEXPRESS_SYNC_BATCH_SIZE` | Produits par page | `20` |
-
-**Obtenir les credentials :** https://developers.aliexpress-solution.com
-
----
-
-## Commandes CLI
-
-### Synchroniser les produits
-
-```bash
-# Synchronisation complète (tous les mots-clés de ALIEXPRESS_SYNC_KEYWORDS)
-docker compose run --rm php bin/console aliexpress:sync:products
-
-# Par mot-clé
-docker compose run --rm php bin/console aliexpress:sync:products --keyword=barbecue
-
-# Un seul produit par item_id
-docker compose run --rm php bin/console aliexpress:sync:products --item=1234567890
-```
-
-### Suivi d'une commande
-
-```bash
-docker compose run --rm php bin/console aliexpress:order:track \
-  --order=8141234567890 \
-  --tracking=JX123456789CN
-```
-
----
-
-## Connexion Sylius
-
-Les produits sont créés/mis à jour dans Sylius avec le code `aliexpress_<item_id>`.
-Cela les distingue des produits Alibaba (`alibaba_<id>`) et des produits manuels.
-
-### Activer la persistance Sylius
-
-La persistance est active par défaut via `SyliusProductPersistence` (configurée dans
-`config/services.yaml`). Pour désactiver temporairement (tests) :
-
-```yaml
-# config/services.yaml
-Cagrille\AliExpressBundle\Contract\ProductPersistenceInterface:
-    alias: Cagrille\AliExpressBundle\Service\NullProductPersistence
-```
-
-### Passer une commande dropship
-
-Injecter `OrderEndpointInterface` et construire un `OrderRequestDto` :
-
-```php
-use Cagrille\AliExpressBundle\Contract\OrderEndpointInterface;
-use Cagrille\AliExpressBundle\Dto\OrderRequestDto;
-
-class DropshipOrderHandler
-{
-    public function __construct(
-        private readonly OrderEndpointInterface $orderEndpoint,
-    ) {}
-
-    public function handle(Order $syliusOrder): void
-    {
-        $request = new OrderRequestDto(
-            syliusOrderId:    (string) $syliusOrder->getNumber(),
-            productId:        '1234567890',
-            quantity:         2,
-            skuAttr:          '200000182:193',
-            shippingAddress:  '42 rue de la Paix',
-            recipientName:     'Jean Dupont',
-            recipientPhone:   '+33612345678',
-            country:          'FR',
-            city:             'Paris',
-            zipCode:          '75002',
-            logisticsService: 'CAINIAO_STANDARD',
-        );
-
-        $orderDto = $this->orderEndpoint->create($request);
-        // Stocker $orderDto->aliExpressOrderId dans la commande Sylius…
-    }
-}
-```
-
----
-
-## Étendre le bundle
-
-### Implémenter une persistance personnalisée
-
-```php
-use Cagrille\AliExpressBundle\Contract\ProductPersistenceInterface;
-use Cagrille\AliExpressBundle\Dto\ProductDto;
-
-class MyCustomPersistence implements ProductPersistenceInterface
-{
-    public function upsert(ProductDto $dto): void { /* ... */ }
-    public function existsByAliExpressId(string $id): bool { return false; }
-}
-```
-
-Puis dans `config/services.yaml` :
-
-```yaml
-Cagrille\AliExpressBundle\Contract\ProductPersistenceInterface:
-    alias: App\Service\MyCustomPersistence
-```
-
----
-
-## Principes de conception
-
-| Principe | Application |
-|---|---|
-| **DRY** | Même architecture que l'AlibabaBundle (interfaces, DTOs, Null Object) |
-| **YAGNI** | Pas d'abstraction commune Alibaba/AliExpress tant qu'elle n'est pas nécessaire |
-| **SRP** | Client HTTP ≠ Endpoints ≠ Services métier ≠ Persistance |
-| **DIP** | `ProductSyncService` dépend de `ProductPersistenceInterface`, jamais de Sylius |
-| **OCP** | Persistance swappable sans modifier `ProductSyncService` |
-| **Null Object** | `NullProductPersistence` remplace tout mock en dev/test |
+| **Token auto** | `TokenStorage` + `TokenRefreshService` — refresh transparent |

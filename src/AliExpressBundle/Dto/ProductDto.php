@@ -13,22 +13,23 @@ namespace Cagrille\AliExpressBundle\Dto;
 final class ProductDto
 {
     /**
-     * @phpstan-ignore missingType.iterableValue
+     * @param string[] $images
+     * @param SkuDto[] $skus
      */
     public function __construct(
         public readonly string $aliExpressId,  // item_id AliExpress
         public readonly string $name,
         public readonly string $description,
-        public readonly float $price,         // Prix d'achat fournisseur (USD)
+        public readonly float $price,          // Prix du premier SKU (référence)
         public readonly string $currency,
         public readonly int $stock,
-        public readonly array $images,        // URLs des images
-        public readonly array $skus,          // Variants (couleur, taille, etc.)
+        public readonly array $images,         // URLs des images
+        public readonly array $skus,           // Variants typés SkuDto
         public readonly string $categoryId,
         public readonly string $storeId,
         public readonly string $storeName,
         public readonly string $shipsFrom,     // Code pays expédition (ex: "CN")
-        public readonly int $shippingDays,  // Délai livraison estimé (jours)
+        public readonly int $shippingDays,     // Délai livraison estimé (jours)
         public readonly \DateTimeImmutable $updatedAt,
     ) {
     }
@@ -47,15 +48,29 @@ final class ProductDto
     public static function fromApiResponse(array $result): self
     {
         $baseInfo = $result['ae_item_base_info_dto'] ?? [];
-        $skus = $result['ae_item_sku_info_dtos']['ae_item_sku_info_d_t_o'] ?? [];
+        $rawSkus = $result['ae_item_sku_info_dtos']['ae_item_sku_info_d_t_o'] ?? [];
         $storeInfo = $result['ae_store_info'] ?? [];
 
-        $firstSku = $skus[0] ?? [];
-        $price = (float) ($firstSku['offer_sale_price'] ?? $firstSku['sku_price'] ?? 0.0);
+        $skuDtos = [];
+        if (is_array($rawSkus)) {
+            foreach (array_values($rawSkus) as $index => $rawSku) {
+                if (is_array($rawSku)) {
+                    $skuDtos[] = SkuDto::fromApiData($rawSku, $index);
+                }
+            }
+        }
+
+        $firstRawSku = is_array($rawSkus) && isset($rawSkus[0]) && is_array($rawSkus[0]) ? $rawSkus[0] : [];
+        $rawSalePrice = $firstRawSku['offer_sale_price'] ?? $firstRawSku['sku_price'] ?? null;
+        $price = is_scalar($rawSalePrice) ? (float) $rawSalePrice : 0.0;
+        $rawCurrency = $firstRawSku['currency_code'] ?? null;
+        $currency = is_string($rawCurrency) ? $rawCurrency : 'EUR';
 
         // Stock : somme des sku_available_stock ou totalAvailQuantity si présent
-        $stock = (int) ($baseInfo['totalAvailQuantity'] ?? array_sum(
-            array_column($skus, 'sku_available_stock'),
+        $stock = (int) ($baseInfo['totalAvailQuantity'] ?? (
+            is_array($rawSkus)
+            ? array_sum(array_column($rawSkus, 'sku_available_stock'))
+            : 0
         ));
 
         return new self(
@@ -63,10 +78,10 @@ final class ProductDto
             name:          (string) ($baseInfo['subject'] ?? ''),
             description:   (string) ($baseInfo['detail'] ?? ''),
             price:         $price,
-            currency:      (string) ($firstSku['currency_code'] ?? 'EUR'),
+            currency:      $currency,
             stock:         $stock,
             images:        self::extractImages($result),
-            skus:          $skus,
+            skus:          $skuDtos,
             categoryId:    (string) ($baseInfo['categoryId'] ?? ''),
             storeId:       (string) ($storeInfo['store_id'] ?? ''),
             storeName:     (string) ($storeInfo['store_name'] ?? ''),

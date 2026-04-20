@@ -132,11 +132,22 @@ services:
         alias: Cagrille\AliExpressBundle\Service\ProductSyncService
 
     # Persistance AliExpress → Sylius (remplace NullProductPersistence)
+    Cagrille\AliExpressBundle\Service\ChannelPricingCalculator:
+        arguments:
+            $advertisingRate: '%env(float:ALIEXPRESS_PRICING_ADVERTISING_RATE)%'
+            $paymentRate:     '%env(float:ALIEXPRESS_PRICING_PAYMENT_RATE)%'
+            $paymentFixed:    '%env(float:ALIEXPRESS_PRICING_PAYMENT_FIXED)%'
+            $taxRate:         '%env(float:ALIEXPRESS_PRICING_TAX_RATE)%'
+            $marginRate:      '%env(float:ALIEXPRESS_PRICING_MARGIN_RATE)%'
+
     Cagrille\AliExpressBundle\Service\SyliusProductPersistence:
         arguments:
-            $productFactory:       '@sylius.factory.product'
-            $channelPricingFactory: '@sylius.factory.channel_pricing'
-            $channelRepository:    '@sylius.repository.channel'
+            $productFactory:           '@sylius.factory.product'
+            $channelPricingFactory:    '@sylius.factory.channel_pricing'
+            $productVariantFactory:    '@sylius.factory.product_variant'
+            $productOptionFactory:     '@sylius.factory.product_option'
+            $productOptionValueFactory: '@sylius.factory.product_option_value'
+            $channelRepository:        '@sylius.repository.channel'
 
     Cagrille\AliExpressBundle\Contract\ProductPersistenceInterface:
         alias: Cagrille\AliExpressBundle\Service\SyliusProductPersistence

@@ -7,6 +7,7 @@ namespace Cagrille\AliExpressBundle\Service;
 use App\Entity\Product\ProductImage;
 use Cagrille\AliExpressBundle\Contract\ProductPersistenceInterface;
 use Cagrille\AliExpressBundle\Dto\ProductDto;
+use Cagrille\AliExpressBundle\Dto\SkuDto;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
@@ -16,7 +17,10 @@ use Sylius\Component\Core\Model\ProductTranslationInterface;
 use Sylius\Component\Core\Model\ProductVariantInterface;
 use Sylius\Component\Core\Uploader\ImageUploaderInterface;
 use Sylius\Component\Product\Factory\ProductFactoryInterface;
+use Sylius\Component\Product\Model\ProductOptionInterface;
+use Sylius\Component\Product\Model\ProductOptionValueInterface;
 use Sylius\Component\Resource\Factory\FactoryInterface;
+use Sylius\Component\Taxation\Model\TaxCategoryInterface;
 use Symfony\Component\HttpFoundation\File\File;
 
 /**
@@ -25,6 +29,17 @@ use Symfony\Component\HttpFoundation\File\File;
  * Crée ou met à jour un produit Sylius à partir d'un ProductDto.
  * Le code produit est préfixé "aliexpress_<id>" pour éviter les conflits
  * avec les produits Alibaba et les produits manuels.
+ *
+ * Variants :
+ *   - Un ProductVariant est créé pour chaque SKU (ae_item_sku_info_d_t_o).
+ *   - Si aucun SKU n'est disponible, un variant par défaut est créé.
+ *   - Les options/valeurs produit Sylius (ProductOption / ProductOptionValue)
+ *     sont créées ou réutilisées si elles existent déjà.
+ *   - Pas de suivi de stock (setTracked(false)).
+ *   - La catégorie de taxe est la première trouvée en base.
+ *
+ * Tarification canal :
+ *   - Déléguée à ChannelPricingCalculator (formule configurable via env vars).
  *
  * Principe SRP : gère uniquement la persistence Sylius.
  * Principe DIP : implémente ProductPersistenceInterface (injectée par le container).
@@ -38,9 +53,13 @@ class SyliusProductPersistence implements ProductPersistenceInterface
     public function __construct(
         private readonly ProductFactoryInterface $productFactory,
         private readonly FactoryInterface $channelPricingFactory,
+        private readonly FactoryInterface $productVariantFactory,
+        private readonly FactoryInterface $productOptionFactory,
+        private readonly FactoryInterface $productOptionValueFactory,
         private readonly ChannelRepositoryInterface $channelRepository,
         private readonly EntityManagerInterface $entityManager,
         private readonly ImageUploaderInterface $imageUploader,
+        private readonly ChannelPricingCalculator $pricingCalculator,
         private readonly LoggerInterface $logger,
     ) {
     }
@@ -72,7 +91,7 @@ class SyliusProductPersistence implements ProductPersistenceInterface
 
         if ($product === null) {
             /** @var ProductInterface $product */
-            $product = $this->productFactory->createWithVariant();
+            $product = $this->productFactory->createNew();
             $product->setCode($code);
 
             $this->logger->info('[AliExpress] Création nouveau produit Sylius : {code}', ['code' => $code]);
@@ -81,11 +100,13 @@ class SyliusProductPersistence implements ProductPersistenceInterface
         }
 
         $this->mapTranslation($product, $dto);
-        $this->mapVariant($product, $dto);
+        $this->mapVariants($product, $dto);
         $this->mapImages($product, $dto);
 
         return $product;
     }
+
+    // ── Traductions ──────────────────────────────────────────────────────────
 
     private function mapTranslation(ProductInterface $product, ProductDto $dto): void
     {
@@ -129,7 +150,6 @@ class SyliusProductPersistence implements ProductPersistenceInterface
 
     /**
      * Description courte : texte brut tronqué à 255 caractères.
-     * Utilisée dans les listings produits de Sylius.
      */
     private function buildShortDescription(ProductDto $dto): ?string
     {
@@ -137,6 +157,226 @@ class SyliusProductPersistence implements ProductPersistenceInterface
 
         return $plain !== null ? mb_substr($plain, 0, 255) : null;
     }
+
+    // ── Variants ─────────────────────────────────────────────────────────────
+
+    /**
+     * Crée ou met à jour un ProductVariant Sylius par SKU AliExpress.
+     * Si aucun SKU n'est disponible, crée un variant par défaut.
+     */
+    private function mapVariants(ProductInterface $product, ProductDto $dto): void
+    {
+        $taxCategory = $this->findFirstTaxCategory();
+
+        if ($dto->skus === []) {
+            // Pas de données SKU : variant par défaut unique (cas affiliate search)
+            $this->upsertDefaultVariant($product, $dto, $taxCategory);
+
+            return;
+        }
+
+        foreach ($dto->skus as $skuDto) {
+            $this->upsertVariant($product, $dto->aliExpressId, $skuDto, $taxCategory);
+        }
+    }
+
+    /**
+     * Variant par défaut sans option (utilisé quand l'API ne retourne pas de SKU détaillé).
+     */
+    private function upsertDefaultVariant(ProductInterface $product, ProductDto $dto, ?TaxCategoryInterface $taxCategory): void
+    {
+        $variantCode = 'aliexpress_' . $dto->aliExpressId . '_default';
+        $variant = $this->findOrCreateVariant($product, $variantCode);
+
+        $variant->setTracked(false);
+
+        if ($taxCategory !== null) {
+            $variant->setTaxCategory($taxCategory);
+        }
+
+        $this->applyChannelPricing($variant, $dto->price, $dto->price);
+    }
+
+    /**
+     * Crée ou met à jour un variant correspondant à un SKU AliExpress.
+     */
+    private function upsertVariant(
+        ProductInterface $product,
+        string $aliExpressId,
+        SkuDto $skuDto,
+        ?TaxCategoryInterface $taxCategory,
+    ): void {
+        $variantCode = 'aliexpress_' . $aliExpressId . '_sku_' . $skuDto->skuId;
+        $variant = $this->findOrCreateVariant($product, $variantCode);
+
+        $variant->setTracked(false);
+
+        if ($taxCategory !== null) {
+            $variant->setTaxCategory($taxCategory);
+        }
+
+        // Options / valeurs du variant
+        foreach ($skuDto->properties as $prop) {
+            $optionValue = $this->findOrCreateOptionValue($product, $prop);
+
+            if (!$variant->hasOptionValue($optionValue)) {
+                $variant->addOptionValue($optionValue);
+            }
+        }
+
+        $this->applyChannelPricing($variant, $skuDto->offerSalePrice, $skuDto->skuPrice);
+    }
+
+    /**
+     * Retourne le variant existant par code ou en crée un nouveau attaché au produit.
+     */
+    private function findOrCreateVariant(ProductInterface $product, string $code): ProductVariantInterface
+    {
+        foreach ($product->getVariants() as $existing) {
+            if ($existing->getCode() === $code) {
+                assert($existing instanceof ProductVariantInterface);
+
+                return $existing;
+            }
+        }
+
+        /** @var ProductVariantInterface $variant */
+        $variant = $this->productVariantFactory->createNew();
+        $variant->setCode($code);
+        $product->addVariant($variant);
+
+        return $variant;
+    }
+
+    /**
+     * Applique le prix canal calculé (formule PDD) sur toutes les chaînes Sylius.
+     */
+    private function applyChannelPricing(
+        ProductVariantInterface $variant,
+        float $pddSalePrice,
+        float $pddOriginalPrice,
+    ): void {
+        $price = $this->pricingCalculator->computePrice($pddSalePrice);
+        $originalPrice = $this->pricingCalculator->computeOriginalPrice($pddOriginalPrice);
+
+        foreach ($this->channelRepository->findAll() as $channel) {
+            /** @var \Sylius\Component\Core\Model\ChannelInterface $channel */
+            $channelCode = $channel->getCode();
+            $channelPricing = $variant->getChannelPricingForChannel($channel);
+
+            if ($channelPricing === null) {
+                /** @var ChannelPricingInterface $channelPricing */
+                $channelPricing = $this->channelPricingFactory->createNew();
+                $channelPricing->setChannelCode($channelCode);
+                $variant->addChannelPricing($channelPricing);
+            }
+
+            $channelPricing->setPrice($price);
+            $channelPricing->setOriginalPrice($originalPrice);
+        }
+    }
+
+    // ── Options produit ──────────────────────────────────────────────────────
+
+    /**
+     * Retourne ou crée un ProductOption + ProductOptionValue pour une propriété SKU.
+     *
+     * @param array{propertyId: int, propertyName: string, valueId: int, valueName: string} $prop
+     */
+    private function findOrCreateOptionValue(
+        ProductInterface $product,
+        array $prop,
+    ): ProductOptionValueInterface {
+        $optionCode = 'aliexpress_prop_' . $prop['propertyId'];
+        $valueCode = 'aliexpress_propval_' . $prop['propertyId'] . '_' . $prop['valueId'];
+
+        $option = $this->findOrCreateOption($product, $optionCode, $prop['propertyName']);
+
+        // Chercher dans les valeurs déjà liées à l'option
+        foreach ($option->getValues() as $existing) {
+            if ($existing->getCode() === $valueCode) {
+                return $existing;
+            }
+        }
+
+        // Chercher en base (valeur d'un autre produit partageant la même option)
+        /** @var ProductOptionValueInterface|null $optionValue */
+        $optionValue = $this->entityManager
+            ->getRepository(ProductOptionValueInterface::class)
+            ->findOneBy(['code' => $valueCode]);
+
+        if ($optionValue === null) {
+            /** @var ProductOptionValueInterface $optionValue */
+            $optionValue = $this->productOptionValueFactory->createNew();
+            $optionValue->setCode($valueCode);
+            $optionValue->setOption($option);
+            $optionValue->setCurrentLocale('fr_FR');
+            $optionValue->setFallbackLocale('fr_FR');
+
+            $valueName = $prop['valueName'] !== '' ? $prop['valueName'] : $valueCode;
+            $optionValue->setValue($valueName);
+
+            $this->entityManager->persist($optionValue);
+        }
+
+        return $optionValue;
+    }
+
+    /**
+     * Retourne ou crée un ProductOption et l'associe au produit si nécessaire.
+     */
+    private function findOrCreateOption(
+        ProductInterface $product,
+        string $code,
+        string $name,
+    ): ProductOptionInterface {
+        // Chercher parmi les options déjà attachées au produit
+        foreach ($product->getOptions() as $existing) {
+            if ($existing->getCode() === $code) {
+                return $existing;
+            }
+        }
+
+        // Chercher en base
+        /** @var ProductOptionInterface|null $option */
+        $option = $this->entityManager
+            ->getRepository(ProductOptionInterface::class)
+            ->findOneBy(['code' => $code]);
+
+        if ($option === null) {
+            /** @var ProductOptionInterface $option */
+            $option = $this->productOptionFactory->createNew();
+            $option->setCode($code);
+            $option->setCurrentLocale('fr_FR');
+            $option->setFallbackLocale('fr_FR');
+            $option->setName($name !== '' ? $name : $code);
+
+            $this->entityManager->persist($option);
+        }
+
+        if (!$product->hasOption($option)) {
+            $product->addOption($option);
+        }
+
+        return $option;
+    }
+
+    // ── Catégorie de taxe ────────────────────────────────────────────────────
+
+    /**
+     * Retourne la première catégorie de taxe disponible en base.
+     */
+    private function findFirstTaxCategory(): ?TaxCategoryInterface
+    {
+        /** @var TaxCategoryInterface|null $taxCategory */
+        $taxCategory = $this->entityManager
+            ->getRepository(TaxCategoryInterface::class)
+            ->findOneBy([]);
+
+        return $taxCategory;
+    }
+
+    // ── Images ───────────────────────────────────────────────────────────────
 
     /**
      * Synchronise les images du produit AliExpress.
@@ -156,7 +396,7 @@ class SyliusProductPersistence implements ProductPersistenceInterface
             return;
         }
 
-        // Supprime toutes les images AliExpress précédentes (evite les doublons en re-import)
+        // Supprime toutes les images AliExpress précédentes (évite les doublons en re-import)
         foreach ($product->getImages() as $existing) {
             if (str_starts_with((string) $existing->getType(), 'aliexpress_')) {
                 $product->removeImage($existing);
@@ -207,36 +447,7 @@ class SyliusProductPersistence implements ProductPersistenceInterface
         return $tmpPath;
     }
 
-    private function mapVariant(ProductInterface $product, ProductDto $dto): void
-    {
-        /** @var ProductVariantInterface|null $variant */
-        $variant = $product->getVariants()->first() ?: null;
-
-        if ($variant === null) {
-            return;
-        }
-
-        // Le prix est en USD — on stocke en centimes (pas de conversion, utiliser un taux si besoin)
-        $price = (int) round($dto->price * 100);
-
-        $variant->setCode('aliexpress_' . $dto->aliExpressId . '_default');
-        $variant->setCurrentLocale('fr_FR');
-
-        foreach ($this->channelRepository->findAll() as $channel) {
-            /** @var \Sylius\Component\Core\Model\ChannelInterface $channel */
-            $channelCode = $channel->getCode();
-            $channelPricing = $variant->getChannelPricingForChannel($channel);
-
-            if ($channelPricing === null) {
-                /** @var ChannelPricingInterface $channelPricing */
-                $channelPricing = $this->channelPricingFactory->createNew();
-                $channelPricing->setChannelCode($channelCode);
-                $variant->addChannelPricing($channelPricing);
-            }
-
-            $channelPricing->setPrice($price > 0 ? $price : 100);
-        }
-    }
+    // ── Utilitaires ──────────────────────────────────────────────────────────
 
     private function buildSlug(ProductDto $dto): string
     {

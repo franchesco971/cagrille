@@ -41,8 +41,6 @@ class IopClient
             throw new \Exception('url is empty', 0);
         }
         $this->gatewayUrl = $url;
-        // $this->appkey = $appkey;
-        // $this->secretKey = $secretKey;
         $this->logLevel = Constants::$log_level_error;
     }
 
@@ -146,7 +144,6 @@ class IopClient
         $ch = curl_init();
         assert($url !== '');
 
-        \var_dump($url, $postFields, $fileFields, $headerFields);
         curl_setopt($ch, \CURLOPT_URL, $url);
         curl_setopt($ch, \CURLOPT_FAILONERROR, false);
         curl_setopt($ch, \CURLOPT_RETURNTRANSFER, true);
