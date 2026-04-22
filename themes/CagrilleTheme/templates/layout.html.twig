@@ -14,6 +14,17 @@
     <link rel="alternate icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
 
     {% block stylesheets %}{% endblock %}
+
+    {# Google Analytics 4 — chargé uniquement si l'ID est défini #}
+    {% if google_analytics_id %}
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ google_analytics_id|e('html_attr') }}"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '{{ google_analytics_id|e('js') }}');
+    </script>
+    {% endif %}
 </head>
 <body class="bg-coal-800 text-ash-100 min-h-screen flex flex-col">
 

@@ -4,6 +4,8 @@ twig:
         '%kernel.project_dir%/themes/CagrilleTheme/templates': CagrilleTheme
     debug: '%kernel.debug%'
     strict_variables: '%kernel.debug%'
+    globals:
+        google_analytics_id: '%env(default::GOOGLE_ANALYTICS_ID)%'
 
 services:
     _defaults:
